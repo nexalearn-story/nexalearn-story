@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NexaLearn - Listen & Learn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/static/NexaLearn.ico" type="image/x-icon">
+
+  <style>
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { text-decoration: none; }
+
+    /* Navbar */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      color: #fff;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem; /* Added padding here for spacing */
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo a {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+    }
+    .navbar .logo a:hover {
+      text-decoration: none;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .navbar .nav-and-search {
+      display: flex;
+      align-items: center; /* Align items vertically */
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+    }
+    .navbar .nav-links li a {
+      color: #fff;
+      display: block;
+      padding: .75rem 1rem;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+      text-decoration: none;
+    }
+
+    .navbar input[type="text"] {
+      padding: .5rem .75rem;
+      border: 1px solid transparent;
+      font-size: 1rem;
+      width: 200px;
+      margin-left: 1rem;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-radius: 4px;
+      transition: all 0.2s ease-in-out;
+    }
+    .navbar input[type="text"]:focus {
+        outline: none;
+        background: #fff;
+        border-color: #fff;
+    }
+    .navbar input[type="text"]::placeholder {
+      color: #555;
+    }
+
+    /* === CORRECTED MOBILE NAVBAR STYLES === */
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block; /* Show the hamburger */
+      }
+
+      /* 1. Hide the entire menu container by default */
+      .navbar .nav-and-search {
+        display: none;
+        
+        /* 2. Position it absolutely to overlay content below the navbar */
+        position: absolute;
+        top: 60px; /* Height of the navbar */
+        left: 0;
+        width: 100%;
+        
+        /* 3. Style the dropdown container */
+        background-color: #28a745;
+        flex-direction: column; /* Stack links and search vertically */
+        align-items: flex-start; /* Align items to the left */
+        padding: 0.5rem 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+
+      /* 4. When .show is added by JS, display the menu */
+      .navbar .nav-and-search.show {
+        display: flex;
+      }
+
+      /* 5. Style the links and search bar for the vertical menu */
+      .navbar .nav-links {
+        flex-direction: column;
+        width: 100%;
+      }
+      .navbar .nav-links li a {
+        padding: .75rem 1.5rem;
+        width: 100%;
+      }
+      .navbar input[type="text"] {
+        width: calc(100% - 3rem); /* Full width minus padding */
+        margin: 0.5rem 1.5rem 1rem 1.5rem; /* Give it proper spacing */
+      }
+    }
+    
+    /* Hero Section */
+    .hero img { width: 100%; display: block; max-height: 450px; object-fit: cover; }
+
+    /* Main container */
+    main.container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+
+    /* Category Section Styling */
+    .category-section {
+      margin: 2.5rem 0;
+    }
+    .category-section h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      padding-left: 1rem;
+      color: #333;
+    }
+
+    /* Horizontal Scrolling Row */
+    .story-row {
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      padding: 1rem;
+      gap: 1.5rem;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc #f5f7fa;
+    }
+    .story-row::-webkit-scrollbar { height: 8px; }
+    .story-row::-webkit-scrollbar-track { background: #f5f7fa; }
+    .story-row::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 10px; border: 2px solid #f5f7fa; }
+
+    /* Card Styling */
+    .card {
+      flex: 0 0 250px;
+      width: 250px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: transform .2s, box-shadow .2s;
+      scroll-snap-align: start;
+      color: #333; /* Ensure text color is not inherited from a link */
+    }
+    a.card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+      text-decoration: none;
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #eee;
+      display: block;
+    }
+    .card-content { padding: 1rem; }
+    .card-content h3 { font-size: 1.2rem; margin-bottom: .5rem; color: #28a745; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-content p.author { font-style: italic; color: #666; font-size: .9rem; }
+
+    /* Footer */
+    footer { background: #28a745; color: #fff; padding: 2rem 1rem; text-align: center; margin-top: 3rem; }
+    footer a { color: #fff; }
+    footer a:hover { text-decoration: underline; }
+    footer .footer-links { margin: 1rem 0; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+    footer small { display: block; margin-top: 1rem; color: #e0e0e0; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <!-- This is the container we will show/hide -->
+      <div class="nav-and-search">
+        <ul class="nav-links">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('submit') }}">Upload</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+        <input type="text" id="search" placeholder="Search stories...">
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero"><img src="/static/back.jpeg" alt="NexaLearn Hero"></section>
+
+  <!-- Main Content with Category Rows -->
+  <main class="container">
+    {% for category in categories %}
+      {% if stories_by_category[category] %}
+      <section class="category-section" data-category="{{ category | lower | replace(' ', '-') }}">
+        <h2>{{ category }}</h2>
+        <div class="story-row">
+          {% for s in stories_by_category[category] %}
+          <a class="card" href="{{ url_for('story', story_id=s.story_id) }}">
+            <img data-src="{{ url_for('uploaded_file', filename=s.cover_image) }}" alt="Cover of {{ s.story_name }}" class="lazy-image">
+            <div class="card-content">
+              <h3>{{ s.story_name }}</h3>
+              <p class="author">by {{ s.author_name }}</p>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    {% endfor %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+  <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">privacy policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">terms and conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    // === UPDATED JAVASCRIPT FOR MENU TOGGLE ===
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      // Toggle the .show class on the main menu container now
+      document.querySelector('.nav-and-search').classList.toggle('show');
+    });
+
+    // Lazy Loading and Search Logic
+    document.addEventListener("DOMContentLoaded", function() {
+      const lazySections = document.querySelectorAll('.category-section');
+      const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const section = entry.target;
+            const images = section.querySelectorAll('img.lazy-image');
+            images.forEach(img => {
+              if (img.dataset.src) {
+                img.src = img.dataset.src;
+                img.classList.remove('lazy-image');
+              }
+            });
+            observer.unobserve(section);
+          }
+        });
+      }, observerOptions);
+      lazySections.forEach(section => { imageObserver.observe(section); });
+
+      // Client-side Search Filter
+      document.getElementById('search').addEventListener('input', function() {
+        const filter = this.value.toLowerCase().trim();
+        const allCards = document.querySelectorAll('.card');
+        const sections = document.querySelectorAll('.category-section');
+        if (!filter) {
+          allCards.forEach(card => card.style.display = '');
+          sections.forEach(sec => sec.style.display = '');
+          return;
+        }
+        sections.forEach(sec => sec.style.display = 'none');
+        allCards.forEach(card => {
+          const title = card.querySelector('h3').textContent.toLowerCase();
+          const author = card.querySelector('.author').textContent.toLowerCase();
+          if (title.includes(filter) || author.includes(filter)) {
+            card.style.display = '';
+            card.closest('.category-section').style.display = '';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NexaLearn - Listen & Learn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/static/NexaLearn.ico" type="image/x-icon">
+
+  <style>
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { color: #fff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Navbar */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      padding: 0 1rem;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 1rem;
+    }
+
+    /* Links + search wrapper */
+    .navbar .nav-and-search {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 0;
+    }
+    .navbar .nav-links li a {
+      display: block;
+      padding: .75rem 1rem;
+      border-radius: 0;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Search input */
+    .navbar input[type="text"] {
+      padding: .75rem 1rem;
+      border: none;
+      font-size: 1rem;
+      max-width: 200px;
+      margin: 0;
+      border-left: 1px solid rgba(255,255,255,0.2);
+      background: #fff;       /* white background */
+      color: #333;            /* dark text */
+      border-radius: 0 4px 4px 0; /* slightly round right corners */
+    }
+    .navbar input[type="text"]::placeholder {
+      color: #999;
+    }
+
+    /* Mobile: collapse links */
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block;
+      }
+      .navbar .nav-and-search {
+        width: 100%;
+        flex-direction: column;
+      }
+      .navbar .nav-links {
+        display: none;
+        flex-direction: column;
+      }
+      .navbar .nav-links.show {
+        display: flex;
+      }
+      .navbar input[type="text"] {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        border-radius: 0 0 4px 4px;
+      }
+    }
+    /* Hero Section (same as before) */
+    /*.hero { background: url('/static/back.jpeg') center/cover no-repeat; color: white; text-align: center; padding: 5rem 1rem; position: relative; }*/
+    .hero img { width: 100%; display: block; max-height: 450px; object-fit: cover; }
+
+    /* Main container */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+
+    /* ## NEW: Category Section Styling ## */
+    .category-section {
+      margin: 2.5rem 0;
+    }
+    .category-section h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      padding-left: 1rem; /* Align with card padding */
+      color: #333;
+    }
+
+    /* ## NEW: Horizontal Scrolling Row ## */
+    .story-row {
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory; /* Optional: for smoother snapping */
+      padding: 1rem;
+      gap: 1.5rem;
+      /* For better scrollbar aesthetics */
+      scrollbar-width: thin;
+      scrollbar-color: #ccc #f5f7fa;
+    }
+    .story-row::-webkit-scrollbar {
+      height: 8px;
+    }
+    .story-row::-webkit-scrollbar-track {
+      background: #f5f7fa;
+    }
+    .story-row::-webkit-scrollbar-thumb {
+      background-color: #ccc;
+      border-radius: 10px;
+      border: 2px solid #f5f7fa;
+    }
+
+    /* ## UPDATED: Card Styling for Horizontal Row ## */
+    .card {
+      flex: 0 0 250px; /* Don't shrink, don't grow, base width 250px */
+      width: 250px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: transform .2s, box-shadow .2s;
+      scroll-snap-align: start; /* For scroll-snap */
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover; /* Changed to cover for a cleaner look */
+      background: #eee; /* Placeholder background color */
+      display: block;
+    }
+    .card-content { padding: 1rem; }
+    .card-content h3 { font-size: 1.2rem; margin-bottom: .5rem; color: #28a745; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-content p.author { font-style: italic; color: #666; font-size: .9rem; }
+
+    /* Footer (same as before) */
+    footer { background: #28a745; color: #fff; padding: 2rem 1rem; text-align: center; margin-top: 3rem; }
+    footer a { color: #fff; }
+    footer .footer-links { margin: 1rem 0; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+    footer small { display: block; margin-top: 1rem; color: #e0e0e0; }
+
+  </style>
+</head>
+<body>
+
+
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <div class="nav-and-search">
+        <ul class="nav-links">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('submit') }}">Upload</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+        <input type="text" id="search" placeholder="Search stories...">
+      </div>
+    </div>
+  </nav>
+
+
+  <section class="hero"><img src="/static/back.jpeg" alt="NexaLearn Hero"></section>
+
+
+  <main class="container">
+    {% for category in categories %}
+      {% if stories_by_category[category] %} {# Only show row if it has stories #}
+      <section class="category-section" data-category="{{ category | lower | replace(' ', '-') }}">
+        <h2>{{ category }}</h2>
+        <div class="story-row">
+          {% for s in stories_by_category[category] %}
+          <a class="card" href="{{ url_for('story', story_id=s.story_id) }}">
+          
+            <img data-src="{{ url_for('uploaded_file', filename=s.cover_image) }}" alt="Cover of {{ s.story_name }}" class="lazy-image">
+            <div class="card-content">
+              <h3>{{ s.story_name }}</h3>
+              <p class="author">by {{ s.author_name }}</p>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    {% endfor %}
+  </main>
+
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">privacy policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">terms and conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    // Hamburger menu toggle
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('show');
+    });
+
+    // ## NEW: Lazy Loading and Search Logic ##
+    document.addEventListener("DOMContentLoaded", function() {
+
+      // --- Lazy Loading Images ---
+      const lazySections = document.querySelectorAll('.category-section');
+      
+      const observerOptions = {
+        root: null, // relative to the viewport
+        rootMargin: '0px',
+        threshold: 0.1 // trigger when 10% of the section is visible
+      };
+
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const section = entry.target;
+            const images = section.querySelectorAll('img.lazy-image');
+            images.forEach(img => {
+              img.src = img.dataset.src;
+              img.classList.remove('lazy-image');
+            });
+            // Stop observing the section once it's loaded to save resources
+            observer.unobserve(section);
+          }
+        });
+      }, observerOptions);
+
+      lazySections.forEach(section => {
+        imageObserver.observe(section);
+      });
+
+      // --- Client-side Search Filter ---
+      document.getElementById('search').addEventListener('input', function() {
+        const filter = this.value.toLowerCase().trim();
+        const allCards = document.querySelectorAll('.card');
+        const sections = document.querySelectorAll('.category-section');
+
+        // If search is empty, show everything
+        if (!filter) {
+          allCards.forEach(card => card.style.display = '');
+          sections.forEach(sec => sec.style.display = '');
+          return;
+        }
+
+        // Hide all cards and sections initially
+        allCards.forEach(card => card.style.display = 'none');
+        sections.forEach(sec => sec.style.display = 'none');
+        
+        // Show only matching cards and their parent sections
+        allCards.forEach(card => {
+          const title = card.querySelector('h3').textContent.toLowerCase();
+          const author = card.querySelector('.author').textContent.toLowerCase();
+          if (title.includes(filter) || author.includes(filter)) {
+            card.style.display = ''; // Show the card
+            // Find its parent section and show it too
+            card.closest('.category-section').style.display = '';
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
+ -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/static/NexaLearn.ico" type="image/x-icon">
+
+  <style>
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { color: #fff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Navbar */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      padding: 0 1rem;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 1rem;
+    }
+
+    /* Links + search wrapper */
+    .navbar .nav-and-search {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 0;
+    }
+    .navbar .nav-links li a {
+      display: block;
+      padding: .75rem 1rem;
+      border-radius: 0;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Search input */
+    .navbar input[type="text"] {
+      padding: .75rem 1rem;
+      border: none;
+      font-size: 1rem;
+      max-width: 200px;
+      margin: 0;
+      border-left: 1px solid rgba(255,255,255,0.2);
+      background: #fff;       /* white background */
+      color: #333;            /* dark text */
+      border-radius: 0 4px 4px 0; /* slightly round right corners */
+    }
+    .navbar input[type="text"]::placeholder {
+      color: #999;
+    }
+
+    /* Mobile: collapse links */
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block;
+      }
+      .navbar .nav-and-search {
+        width: 100%;
+        flex-direction: column;
+      }
+      .navbar .nav-links {
+        display: none;
+        flex-direction: column;
+      }
+      .navbar .nav-links.show {
+        display: flex;
+      }
+      .navbar input[type="text"] {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        border-radius: 0 0 4px 4px;
+      }
+    }
+
+    /* Hero */
+    .hero {
+      background: url('/static/back.jpeg') center/cover no-repeat;
+      color: white;
+      text-align: center;
+      padding: 5rem 1rem;
+      position: relative;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+    }
+    .hero .hero-content {
+      position: relative;
+      max-width: 800px;
+      margin: auto;
+      z-index: 1;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    .hero p { font-size: 1.1rem; }
+
+    /* Main container */
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* Grid of cards */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+
+    .card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
+      background: #f5f7fa;
+      display: block;
+    }
+
+    .card-content {
+      padding: 1rem;
+    }
+    .card-content h2 {
+      font-size: 1.25rem;
+      margin-bottom: .5rem;
+      color: #28a745;
+    }
+    .card-content p {
+      margin-bottom: .75rem;
+      line-height: 1.4;
+    }
+    .card-content .author {
+      font-style: italic;
+      color: #666;
+      font-size: .9rem;
+    }
+
+    /* Footer */
+    footer {
+      background: #28a745;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    footer a { color: #fff; }
+    footer .footer-links {
+      margin: 1rem 0;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    footer small { display: block; margin-top: 1rem; color: #e0e0e0; }
+  </style>
+</head>
+<body>
+
+
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="{{ url_for('index') }}">NexaLearn</a>
+      </div>
+
+
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+
+
+      <div class="nav-and-search">
+        <ul class="nav-links">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('about') }}">About</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+        <input type="text" id="search" placeholder="Search stories...">
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero" style="background: none; padding: 0;">
+    <img src="/static/back.jpeg" alt="NexaLearn Hero" style="width: 100%; display: block; max-height: 600px; object-fit: cover;">
+</section>
+
+
+  <main class="container">
+    <div class="grid" id="storiesGrid">
+      {% if stories %}
+        {% for s in stories %}
+        <a class="card" href="{{ url_for('story', story_id=s.story_id) }}">
+          <img src="{{ url_for('uploaded_file', filename=s.cover_image) }}" alt="Cover of {{ s.story_name }}">
+          <div class="card-content">
+            <h2>{{ s.story_name }}</h2>
+            <p class="author">by {{ s.author_name }}</p>
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <p>No stories found. <a href="#">Be the first to upload!</a></p>
+      {% endif %}
+    </div>
+  </main>
+
+
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">privacy policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">terms and conditions</a>
+    </div>
+    <small>&copy; 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    // Hamburger menu toggle
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('show');
+    });
+
+    // Client-side search filter
+    document.getElementById('search').addEventListener('input', function() {
+      const filter = this.value.toLowerCase();
+      document.querySelectorAll('#storiesGrid .card').forEach(card => {
+        const title = card.querySelector('.card-content h2').textContent.toLowerCase();
+        card.style.display = title.includes(filter) ? '' : 'none';
+      });
+    });
+  </script>
+
+</body>
+</html>
+ -->

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>About – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <style>
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { text-decoration: none; }
+
+    /* === UPDATED NAVBAR STYLES === */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      color: #fff;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo a {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+    }
+     .navbar .logo a:hover {
+      text-decoration: none;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* This is the container for our links */
+    .navbar .nav-menu {
+      display: flex;
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+    }
+    .navbar .nav-links li a {
+      color: #fff;
+      display: block;
+      padding: .75rem 1rem;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+      text-decoration: none;
+    }
+
+    /* === MOBILE NAVBAR STYLES (THE FIX) === */
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block; /* Show the hamburger */
+      }
+
+      /* Hide the menu container by default */
+      .navbar .nav-menu {
+        display: none;
+        
+        /* Position it as an absolute dropdown */
+        position: absolute;
+        top: 60px; /* Navbar height */
+        left: 0;
+        width: 100%;
+        
+        /* Style the dropdown */
+        background-color: #28a745;
+        flex-direction: column;
+        padding: 0.5rem 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+
+      /* When .show is added, display the menu */
+      .navbar .nav-menu.show {
+        display: flex;
+      }
+
+      /* Style the links for vertical layout */
+      .navbar .nav-links {
+        flex-direction: column;
+        width: 100%;
+      }
+      .navbar .nav-links li a {
+        padding: .75rem 1.5rem;
+        width: 100%;
+      }
+    }
+ 
+    /* Main content container */
+    .main-container {
+      max-width: 900px;
+      margin: 3rem auto;
+      padding: 2rem; /* Added more padding for better spacing */
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    main a {
+      color: #0056b3; /* A more accessible blue */
+      font-weight: 500;
+    }
+     main a:hover {
+      text-decoration: underline;
+    }
+
+    h1 { text-align: center; margin-bottom: 2rem; color: #28a745; }
+    h2 { margin-top: 1.5rem; color: #28a745; border-bottom: 2px solid #e9ecef; padding-bottom: 0.5rem; }
+    p { margin: 1rem 0; }
+
+    /* Footer */
+    footer {
+      background: #28a745;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    footer a { color: #fff; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <!-- === UPDATED NAVBAR HTML STRUCTURE === -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="{{ url_for('index') }}">NexaLearn</a>
+      </div>
+
+      <!-- Hamburger toggle button -->
+      <button class="menu-toggle" aria-label="Toggle navigation">☰</button>
+
+      <!-- Wrapper div for the navigation links -->
+      <div class="nav-menu">
+        <ul class="nav-links">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('submit') }}">Upload</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+ <main class="main-container">
+  <h1>About NexaLearn</h1>
+  <p>
+    At NexaLearn, we believe that knowledge and literature should be accessible, engaging, and fit seamlessly into your modern life. We are a free online platform dedicated to transforming written and educational content into immersive audiobooks and spoken-word experiences that you can listen to anytime, anywhere.
+  </p>
+
+  <h2>Our Story: A Student's Solution</h2>
+  <p>
+    NexaLearn was born from a simple idea shared between a group of university students. Juggling lectures, assignments, and a love for reading, we faced a universal challenge: there’s never enough time. We found ourselves wishing we could study for an exam during a workout, absorb a textbook chapter during a commute, or enjoy a novel while doing chores.
+  </p>
+  <p>
+    We turned to audio but found existing platforms were often too expensive or lacked the diverse educational content we needed. So, we decided to build the solution ourselves: an open platform where academic learning and classic literature coexist. NexaLearn is our answer for every student, professional, and curious mind looking to make the most of every moment.
+  </p>
+
+  <h2>More Than Audiobooks: Our Content Spectrum</h2>
+  <p>
+    Our library is built to cater to every facet of your intellectual curiosity. We host a diverse and ever-growing collection of audio content across a wide spectrum of categories, including:
+  </p>
+  <ul>
+    <li><strong>Academic & Professional:</strong> Turn your downtime into study time with University Courses, School Lessons, Science & Technology, History, and Business & Finance.</li>
+    <li><strong>Personal Development:</strong> Invest in yourself with our collection of Self-Help & Motivation audio and insightful Biographies.</li>
+    <li><strong>Literature & Arts:</strong> Escape into a world of imagination with full-length Novels, classic Poetry, and captivating Children's Stories.</li>
+    <li><strong>And Much More:</strong> Our 'Other' category is a testament to our commitment to hosting a wide variety of valuable audio content.</li>
+  </ul>
+  <p>
+    Our platform is a community-driven space, constantly enriched by creators from all walks of life.
+  </p>
+
+  <h2>Our Mission</h2>
+  <p>Our mission is built on three core principles:</p>
+  <ul>
+    <li><strong>To Make Knowledge Accessible:</strong> We strive to break down barriers to education and information by providing a free and flexible audio-based resource.</li>
+    <li><strong>To Build a Community:</strong> We aim to create a vibrant ecosystem that empowers creators to share their voice and helps listeners discover unique, high-quality audiobooks and lessons.</li>
+    <li><strong>To Foster Lifelong Curiosity:</strong> We believe learning never stops. Our goal is to provide the tools for everyone to continue their journey of knowledge and self-improvement through listening.</li>
+  </ul>
+
+  <h2>Join the NexaLearn Community</h2>
+  <p>
+    Whether you're here to listen and learn or to share your own knowledge and creative works, we welcome you.
+  </p>
+  <ul>
+    <li>
+      <strong>Listeners:</strong> Dive into our library, discover new topics, and redefine what’s possible in a day.
+    </li>
+    <li>
+      <strong>Creators:</strong> Are you an educator, author, narrator, or content creator with a voice to share? <a href="{{ url_for('submit') }}">Click here to upload your audiobook</a> and reach a global audience. Please review our <a href="{{ url_for('privacy') }}">Privacy Policy</a> and <a href="{{ url_for('termsAndCondition') }}">Terms and Conditions</a> to get started.
+    </li>
+  </ul>
+
+</main>
+
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">Terms and Conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <!-- === UPDATED JAVASCRIPT === -->
+  <script>
+    // Toggle mobile nav by targeting the new wrapper
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-menu').classList.toggle('show');
+    });
+  </script>
+
+</body>
+</html>

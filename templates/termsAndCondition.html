@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Terms and Conditions – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <style>
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { text-decoration: none; }
+
+    /* === UPDATED NAVBAR STYLES === */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      color: #fff;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo a {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+    }
+     .navbar .logo a:hover {
+      text-decoration: none;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* This is the container for our links */
+    .navbar .nav-menu {
+      display: flex;
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+    }
+    .navbar .nav-links li a {
+      color: #fff;
+      display: block;
+      padding: .75rem 1rem;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+      text-decoration: none;
+    }
+
+    /* === MOBILE NAVBAR STYLES (THE FIX) === */
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block; /* Show the hamburger */
+      }
+
+      /* Hide the menu container by default */
+      .navbar .nav-menu {
+        display: none;
+        
+        /* Position it as an absolute dropdown */
+        position: absolute;
+        top: 60px; /* Navbar height */
+        left: 0;
+        width: 100%;
+        
+        /* Style the dropdown */
+        background-color: #28a745;
+        flex-direction: column;
+        padding: 0.5rem 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+
+      /* When .show is added, display the menu */
+      .navbar .nav-menu.show {
+        display: flex;
+      }
+
+      /* Style the links for vertical layout */
+      .navbar .nav-links {
+        flex-direction: column;
+        width: 100%;
+      }
+      .navbar .nav-links li a {
+        padding: .75rem 1.5rem;
+        width: 100%;
+      }
+    }
+
+    /* Main content styles */
+    .main-container {
+      max-width: 900px;
+      margin: 3rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .main-container h1 { text-align: center; margin-bottom: 2rem; color: #28a745; }
+    .main-container h2 { margin-top: 1.5rem; color: #28a745; border-bottom: 2px solid #e9ecef; padding-bottom: 0.5rem; }
+    .main-container p { margin: 1rem 0; }
+    .main-container a { color: #0056b3; font-weight: 500; }
+    .main-container a:hover { text-decoration: underline; }
+
+    /* Footer styles */
+    footer {
+      background: #28a745;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    footer a { color: #fff; }
+    footer a:hover { text-decoration: underline; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <!-- === UPDATED NAVBAR HTML STRUCTURE === -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="{{ url_for('index') }}">NexaLearn</a>
+      </div>
+
+      <!-- Hamburger toggle button -->
+      <button class="menu-toggle" aria-label="Toggle navigation">☰</button>
+
+      <!-- Wrapper div for the navigation links -->
+      <div class="nav-menu">
+        <ul class="nav-links">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('submit') }}">Upload</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+ <main class="main-container">
+    <h1>Terms and Conditions for NexaLearn</h1>
+   
+    
+    <p>Welcome to NexaLearn ("we," "us," or "our"). These Terms and Conditions ("Terms") govern your use of the NexaLearn website and the services we offer (collectively, the "Service"). Please read these Terms carefully before using the Service.</p>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>By accessing or using our Service, you agree to be bound by these Terms and our <a href="{{ url_for('privacy') }}">Privacy Policy</a>. If you do not agree with any part of the terms, then you do not have permission to access the Service.</p>
+
+    <h2>2. Description of Service</h2>
+    <p>NexaLearn provides a platform for creators to upload and share audio content—including audiobooks, lessons, courses, novels, and more—and for users to listen to this content for free. The Service is supported by advertising.</p>
+
+    <h2>3. User-Generated Content (UGC)</h2>
+    <p>This section governs the content you upload to our platform.</p>
+    
+    <h4>A. Your Ownership and Responsibility</h4>
+    <p>
+        <strong>You retain full ownership of the intellectual property rights to the content you create and upload to NexaLearn.</strong> We do not claim any ownership rights to your text, audio files, or images. You are solely responsible for your content and the consequences of posting or publishing it.
+    </p>
+
+    <h4>B. License You Grant to NexaLearn</h4>
+    <p>
+        By uploading content to the Service, you grant NexaLearn a worldwide, non-exclusive, royalty-free, sublicensable, and transferable license to use, host, store, reproduce, display, perform, and distribute your content. This license is limited to the purpose of operating, promoting, and improving the NexaLearn Service. This license terminates when you or NexaLearn removes your content from the Service.
+    </p>
+    
+    <h4>C. Your Representations and Warranties</h4>
+    <p>
+        You affirm, represent, and warrant that you own or have the necessary licenses, rights, consents, and permissions to publish the content you submit. You also warrant that your content does not and will not infringe upon the copyright, trademark, privacy, or other proprietary rights of any third party.
+    </p>
+
+    <h2>4. Prohibited Content and Conduct</h2>
+    <p>You agree not to use the Service to upload, post, or otherwise transmit any content that:</p>
+    <ul>
+        <li>Infringes on any third party's copyright or other intellectual property rights.</li>
+        <li>Is illegal, defamatory, harassing, abusive, fraudulent, obscene, or otherwise objectionable.</li>
+        <li>Contains hate speech, incites violence, or promotes discrimination based on race, gender, religion, nationality, disability, sexual orientation, or age.</li>
+        <li>Contains viruses, malware, or any other computer code, files, or programs designed to interrupt, destroy, or limit the functionality of any computer software or hardware.</li>
+    </ul>
+    <p>Attempting to gain unauthorized access to our systems or engaging in any activity that disrupts the Service is strictly prohibited.</p>
+    
+    <h2>5. Termination of Access</h2>
+    <p>We reserve the right to terminate or suspend your access to our Service immediately, without prior notice or liability, for any reason, including without limitation if you breach these Terms. We may remove any content that we determine, in our sole discretion, violates these Terms.</p>
+
+    <h2>6. Disclaimers and Limitation of Liability</h2>
+    <p>
+        The Service is provided on an "AS IS" and "AS AVAILABLE" basis. We do not warrant that the Service will be uninterrupted, secure, or error-free. The content on NexaLearn is user-generated, and we do not endorse and are not responsible for the accuracy, completeness, or reliability of any content uploaded by users.
+    </p>
+    <p>
+        In no event shall NexaLearn or its student operators be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of, or inability to use, the Service.
+    </p>
+
+    <h2>7. Third-Party Links & Advertising</h2>
+    <p>Our Service is supported by advertising (e.g., Google AdSense) and may contain links to third-party websites that are not owned or controlled by us. We have no control over and assume no responsibility for the content or practices of any third-party sites.</p>
+
+    <h2>8. Changes to Terms</h2>
+    <p>We reserve the right to modify these Terms at any time. We will notify you of any changes by posting the new Terms on this page and updating the "Effective Date." Your continued use of the Service after any such changes constitutes your acceptance of the new Terms.</p>
+
+    <h2>9. Governing Law</h2>
+    <p>These Terms shall be governed in accordance with the laws of [Your Country/State], without regard to its conflict of law provisions.</p>
+    
+    <h2>10. Contact Us</h2>
+    <p>If you have any questions about these Terms, please <a href="{{ url_for('contact') }}">contact us through our website</a>.</p>
+</main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">Terms and Conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <!-- === UPDATED JAVASCRIPT === -->
+  <script>
+    // Toggle mobile nav by targeting the new wrapper
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-menu').classList.toggle('show');
+    });
+  </script>
+</body>
+</html>

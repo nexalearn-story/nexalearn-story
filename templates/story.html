@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ story.story_name }} – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <style>
+    :root {
+      --player-height-desktop: 80px;
+      --player-height-mobile: 65px;
+      --brand-color: #28a745;
+      --brand-color-hover: #218838;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body { height: 100%; }
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        background: #f5f7fa; color: #333; line-height: 1.6; 
+        padding-bottom: var(--player-height-desktop);
+        display: flex; flex-direction: column; min-height: 100vh;
+    }
+    .content { flex-grow: 1; }
+
+    a { text-decoration: none; }
+    
+    .navbar { background: var(--brand-color); position: sticky; top: 0; z-index: 200; }
+    .navbar .container { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; height: 60px; padding: 0 1rem; }
+    .navbar .logo a { font-size: 1.5rem; font-weight: bold; color: #fff; }
+    .navbar .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: #fff; cursor: pointer; }
+    .navbar .nav-links { list-style: none; display: flex; }
+    .navbar .nav-links li a { color: white; display: block; padding: .75rem 1rem; transition: background .2s; }
+    .navbar .nav-links li a:hover { background: rgba(255,255,255,0.2); }
+    
+    .main-content-container { width: 100%; max-width: 850px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+    .card img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: contain; background: #f0f2f5; }
+    .card-content { padding: 1.5rem; }
+    .card-content h1 { font-size: 2rem; color: var(--brand-color); margin-bottom: .5rem; }
+    .card-content .author { font-style: italic; color: #666; margin-bottom: 1rem; }
+    .description-wrapper { max-height: 4.8em; overflow: hidden; position: relative; transition: max-height 0.4s ease-in-out; }
+    .description-wrapper.expanded { max-height: 1000px; }
+    .description-wrapper:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2em; background: linear-gradient(to top, white, rgba(255, 255, 255, 0)); pointer-events: none; }
+    .toggle-button { background: none; border: none; color: var(--brand-color); font-weight: bold; cursor: pointer; padding: 0.5rem 0; margin-top: 0.5rem; display: none; }
+    
+    .episode-list { display: grid; gap: 1rem; }
+    .episode { display: flex; align-items: center; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform .2s, box-shadow .2s, border-color .2s, background-color .2s; border: 2px solid transparent; }
+    .episode:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .episode.active { border-color: var(--brand-color); background: #e9f7ec; }
+    .episode-thumb { width: 80px; height: 80px; object-fit: cover; flex-shrink: 0; }
+    .episode-info { padding: .75rem 1.25rem; flex: 1; min-width: 0; }
+    .episode-info h3 { margin: 0 0 .25rem; font-size: 1.1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .episode-duration { font-size: 0.9rem; color: #777; font-weight: 500; }
+    
+    .player-container { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--player-height-desktop); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+    .player-container.visible { transform: translateY(0); }
+    .player-art-info { display: flex; align-items: center; width: 300px; min-width: 0; }
+    #player-thumb { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 15px; flex-shrink: 0; }
+    #player-title { font-weight: bold; font-size: 0.9rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-controls { display: flex; flex-grow: 1; align-items: center; gap: 15px; }
+    #custom-play-pause { background: var(--brand-color); border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; flex-shrink: 0; transition: background-color .2s; }
+    #custom-play-pause:hover { background: var(--brand-color-hover); }
+    #custom-play-pause svg { width: 22px; height: 22px; }
+    .progress-box { display: flex; align-items: center; gap: 10px; width: 100%; }
+    #current-time, #total-time { font-size: 0.8rem; color: #666; font-variant-numeric: tabular-nums; }
+    #progress-bar { flex-grow: 1; background-color: #e0e0e0; height: 5px; border-radius: 5px; cursor: pointer; }
+    #progress-filled { background-color: var(--brand-color); width: 0; height: 100%; border-radius: 5px; }
+    
+    footer { background: var(--brand-color); color: #fff; padding: 2rem 1rem; text-align: center; flex-shrink: 0; }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    footer a { color: #fff; text-decoration: none; transition: text-decoration .2s; }
+    footer a:hover { text-decoration: underline; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1.5rem; }
+
+    @media (max-width: 768px) {
+        body { padding-bottom: var(--player-height-mobile); }
+        .navbar .menu-toggle { display: block; }
+        .navbar .nav-links { display: none; flex-direction: column; width: 100%; position: absolute; top: 60px; left: 0; background: var(--brand-color); }
+        .navbar .nav-links.show { display: flex; }
+        .main-content-container { padding: 1.5rem 1rem; }
+        .player-container { height: var(--player-height-mobile); padding: 0 10px; }
+        .player-art-info { width: auto; flex-grow: 1; }
+        #player-thumb { width: 45px; height: 45px; margin-right: 10px; }
+        .player-controls { flex-grow: 0; gap: 10px; }
+        .progress-box { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <ul class="nav-links">
+        <<li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('submit') }}">Upload</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="content">
+    <div class="main-content-container">
+      <div class="card">
+        <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+        <div class="card-content">
+          <h1>{{ story.story_name }}</h1>
+          <p class="author">by {{ story.author_name }}</p>
+          {% if story.description %}
+            <div class="description-wrapper"><p class="story-description">{{ story.description }}</p></div>
+            <button id="toggle-desc-btn" class="toggle-button">Read More</button>
+          {% endif %}
+        </div>
+      </div>
+
+      <h2 style="text-align:center; margin-bottom:1.5rem; color:var(--brand-color);">Episodes</h2>
+      <div class="episode-list">
+        {% for ep in episodes %}
+        <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}" data-image-url="{{ url_for('uploaded_file', filename=ep.image_file) }}">
+          <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+          <div class="episode-info">
+            <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
+            <span class="episode-duration">🕒 --:--</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </main>
+  
+  <div id="player-container" class="player-container">
+    <div class="player-art-info">
+        <img id="player-thumb" src="data:," alt="">
+        <div id="player-title">Select an episode to begin</div>
+    </div>
+    <div class="player-controls">
+        <button id="custom-play-pause" aria-label="Play/Pause">
+            <svg id="play-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>
+            <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z"/></svg>
+        </button>
+        <div class="progress-box">
+            <span id="current-time">0:00</span>
+            <div id="progress-bar"><div id="progress-filled"></div></div>
+            <span id="total-time">0:00</span>
+        </div>
+    </div>
+  </div>
+  
+  <audio id="player" style="display:none;"></audio>
+  
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">privacy policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">terms and conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- DOM Element References ---
+      const playerContainer = document.getElementById('player-container');
+      const player = document.getElementById('player');
+      const playerThumb = document.getElementById('player-thumb');
+      const playerTitle = document.getElementById('player-title');
+      const playPauseBtn = document.getElementById('custom-play-pause');
+      const playIcon = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon');
+      const progressBar = document.getElementById('progress-bar');
+      const progressFilled = document.getElementById('progress-filled');
+      const currentTimeEl = document.getElementById('current-time');
+      const totalTimeEl = document.getElementById('total-time');
+      const allEpisodes = document.querySelectorAll('.episode');
+      
+      // -- STATE VARIABLE TO TRACK CURRENTLY LOADED AUDIO --
+      // This is the key to solving the problem. We store the relative URL.
+      let currentPlayingUrl = null;
+      
+      const formatTime = s => isNaN(s) ? '0:00' : `${Math.floor(s/60)}:${(Math.floor(s%60)+'').padStart(2,'0')}`;
+
+      // ========= REWRITTEN & CORRECTED PLAYER LOGIC =========
+      allEpisodes.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            if (el.dataset.durationLoaded) return;
+            const durationSpan = el.querySelector('.episode-duration');
+            durationSpan.textContent = '🕒 Loading...';
+            const tempAudio = new Audio(el.dataset.audioUrl);
+            tempAudio.addEventListener('loadedmetadata', () => {
+              durationSpan.textContent = `🕒 ${formatTime(tempAudio.duration)}`;
+              el.dataset.durationLoaded = 'true';
+            });
+        }, { once: true });
+
+        // Main click handler for each episode
+        el.addEventListener('click', () => {
+          const clickedAudioUrl = el.dataset.audioUrl;
+          
+          // **THE KEY FIX IS HERE**
+          // We now compare the clicked URL with our state variable.
+          if (currentPlayingUrl === clickedAudioUrl) {
+            // --- REQUIREMENT 2 & 3: PAUSE/RESUME ---
+            // If it's the SAME episode, just toggle play/pause.
+            if (player.paused) {
+              player.play(); // If paused, resume playing.
+            } else {
+              player.pause(); // If playing, pause it.
+            }
+          } else {
+            // --- REQUIREMENT 1: PLAY NEW EPISODE ---
+            // If it's a NEW episode, load it and play from the start.
+            
+            allEpisodes.forEach(ep => ep.classList.remove('active')); 
+            el.classList.add('active'); 
+
+            // Update the audio player's source and UI
+            player.src = clickedAudioUrl;
+            playerThumb.src = el.dataset.imageUrl;
+            playerTitle.textContent = el.querySelector('.episode-info h3').textContent;
+            
+            // **UPDATE OUR STATE VARIABLE**
+            currentPlayingUrl = clickedAudioUrl;
+            
+            player.play();
+            playerContainer.classList.add('visible');
+          }
+        });
+      });
+
+      // --- Sync Custom UI with Audio Player State ---
+      player.addEventListener('play', () => {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        // Ensure the correct episode is visually active
+        document.querySelector('.episode.active')?.classList.remove('active');
+        document.querySelector(`.episode[data-audio-url="${currentPlayingUrl}"]`)?.classList.add('active');
+      });
+
+      player.addEventListener('pause', () => {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      });
+
+      player.addEventListener('ended', () => {
+        const currentActive = document.querySelector('.episode.active');
+        if (currentActive) currentActive.classList.remove('active');
+        currentPlayingUrl = null; // Reset the state
+      });
+      
+      player.addEventListener('loadedmetadata', () => {
+        totalTimeEl.textContent = formatTime(player.duration);
+      });
+
+      player.addEventListener('timeupdate', () => {
+        if(player.duration) { progressFilled.style.width = `${(player.currentTime / player.duration) * 100}%`; }
+        currentTimeEl.textContent = formatTime(player.currentTime);
+      });
+
+      // --- Custom Controls Handlers ---
+      playPauseBtn.addEventListener('click', () => {
+        if (!currentPlayingUrl) return; // Do nothing if no audio is loaded
+        player.paused ? player.play() : player.pause();
+      });
+
+      progressBar.addEventListener('click', (e) => {
+        if (!player.duration) return;
+        const progressBarRect = progressBar.getBoundingClientRect();
+        const clickPosition = e.clientX - progressBarRect.left;
+        player.currentTime = (clickPosition / progressBar.clientWidth) * player.duration;
+      });
+
+      // --- Other Page Logic ---
+      document.querySelector('.menu-toggle').addEventListener('click', () => {
+        document.querySelector('.nav-links').classList.toggle('show');
+      });
+      const descWrapper = document.querySelector('.description-wrapper'), descBtn = document.getElementById('toggle-desc-btn');
+      if(descWrapper && descBtn && descWrapper.scrollHeight > descWrapper.offsetHeight) {
+        descBtn.style.display = 'block';
+        descBtn.addEventListener('click', () => {
+          descBtn.textContent = descWrapper.classList.toggle('expanded') ? 'Show Less' : 'Read More';
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ story.story_name }} – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <style>
+    :root {
+      --player-height-desktop: 80px;
+      --player-height-mobile: 65px;
+      --brand-color: #28a745;
+      --brand-color-hover: #218838;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body { height: 100%; }
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        background: #f5f7fa; color: #333; line-height: 1.6; 
+        padding-bottom: var(--player-height-desktop);
+        display: flex; flex-direction: column; min-height: 100vh;
+    }
+    .content { flex-grow: 1; }
+
+    a { text-decoration: none; }
+    
+    .navbar { background: var(--brand-color); position: sticky; top: 0; z-index: 200; }
+    .navbar .container { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; height: 60px; padding: 0 1rem; }
+    .navbar .logo a { font-size: 1.5rem; font-weight: bold; color: #fff; }
+    .navbar .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: #fff; cursor: pointer; }
+    .navbar .nav-links { list-style: none; display: flex; }
+    .navbar .nav-links li a { color: white; display: block; padding: .75rem 1rem; transition: background .2s; }
+    .navbar .nav-links li a:hover { background: rgba(255,255,255,0.2); }
+    
+    .main-content-container { width: 100%; max-width: 850px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+    .card img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: contain; background: #f0f2f5; }
+    .card-content { padding: 1.5rem; }
+    .card-content h1 { font-size: 2rem; color: var(--brand-color); margin-bottom: .5rem; }
+    .card-content .author { font-style: italic; color: #666; margin-bottom: 1rem; }
+    .description-wrapper { max-height: 4.8em; overflow: hidden; position: relative; transition: max-height 0.4s ease-in-out; }
+    .description-wrapper.expanded { max-height: 1000px; }
+    .description-wrapper:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2em; background: linear-gradient(to top, white, rgba(255, 255, 255, 0)); pointer-events: none; }
+    .toggle-button { background: none; border: none; color: var(--brand-color); font-weight: bold; cursor: pointer; padding: 0.5rem 0; margin-top: 0.5rem; display: none; }
+    
+    .episode-list { display: grid; gap: 1rem; }
+    .episode { display: flex; align-items: center; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform .2s, box-shadow .2s, border-color .2s, background-color .2s; border: 2px solid transparent; }
+    .episode:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .episode.active { border-color: var(--brand-color); background: #e9f7ec; }
+    .episode-thumb { width: 80px; height: 80px; object-fit: cover; flex-shrink: 0; }
+    .episode-info { padding: .75rem 1.25rem; flex: 1; min-width: 0; }
+    .episode-info h3 { margin: 0 0 .25rem; font-size: 1.1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .episode-duration { font-size: 0.9rem; color: #777; font-weight: 500; }
+    
+    .player-container { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--player-height-desktop); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+    .player-container.visible { transform: translateY(0); }
+    .player-art-info { display: flex; align-items: center; width: 300px; min-width: 0; }
+    #player-thumb { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 15px; flex-shrink: 0; }
+    #player-title { font-weight: bold; font-size: 0.9rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-controls { display: flex; flex-grow: 1; align-items: center; gap: 15px; }
+    #custom-play-pause { background: var(--brand-color); border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; flex-shrink: 0; transition: background-color .2s; }
+    #custom-play-pause:hover { background: var(--brand-color-hover); }
+    #custom-play-pause svg { width: 22px; height: 22px; }
+    .progress-box { display: flex; align-items: center; gap: 10px; width: 100%; }
+    #current-time, #total-time { font-size: 0.8rem; color: #666; font-variant-numeric: tabular-nums; }
+    #progress-bar { flex-grow: 1; background-color: #e0e0e0; height: 5px; border-radius: 5px; cursor: pointer; }
+    #progress-filled { background-color: var(--brand-color); width: 0; height: 100%; border-radius: 5px; }
+    
+    footer { background: var(--brand-color); color: #fff; padding: 2rem 1rem; text-align: center; flex-shrink: 0; }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    footer a { color: #fff; text-decoration: none; transition: text-decoration .2s; }
+    footer a:hover { text-decoration: underline; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1.5rem; }
+
+    @media (max-width: 768px) {
+        body { padding-bottom: var(--player-height-mobile); }
+        .navbar .menu-toggle { display: block; }
+        .navbar .nav-links { display: none; flex-direction: column; width: 100%; position: absolute; top: 60px; left: 0; background: var(--brand-color); }
+        .navbar .nav-links.show { display: flex; }
+        .main-content-container { padding: 1.5rem 1rem; }
+        .player-container { height: var(--player-height-mobile); padding: 0 10px; }
+        .player-art-info { width: auto; flex-grow: 1; }
+        #player-thumb { width: 45px; height: 45px; margin-right: 10px; }
+        .player-controls { flex-grow: 0; gap: 10px; }
+        .progress-box { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('submit') }}">Upload</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="content">
+    <div class="main-content-container">
+      <div class="card">
+        <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+        <div class="card-content">
+          <h1>{{ story.story_name }}</h1>
+          <p class="author">by {{ story.author_name }}</p>
+          {% if story.description %}
+            <div class="description-wrapper"><p class="story-description">{{ story.description }}</p></div>
+            <button id="toggle-desc-btn" class="toggle-button">Read More</button>
+          {% endif %}
+        </div>
+      </div>
+
+      <h2 style="text-align:center; margin-bottom:1.5rem; color:var(--brand-color);">Episodes</h2>
+      <div class="episode-list">
+        {% for ep in episodes %}
+        <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}" data-image-url="{{ url_for('uploaded_file', filename=ep.image_file) }}">
+          <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+          <div class="episode-info">
+            <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
+            <span class="episode-duration">🕒 --:--</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </main>
+  
+  <div id="player-container" class="player-container">
+    <div class="player-art-info">
+        <img id="player-thumb" src="data:," alt="">
+        <div id="player-title">Select an episode to begin</div>
+    </div>
+    <div class="player-controls">
+        <button id="custom-play-pause" aria-label="Play/Pause">
+            <svg id="play-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>
+            <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z"/></svg>
+        </button>
+        <div class="progress-box">
+            <span id="current-time">0:00</span>
+            <div id="progress-bar"><div id="progress-filled"></div></div>
+            <span id="total-time">0:00</span>
+        </div>
+    </div>
+  </div>
+  
+  <audio id="player" style="display:none;"></audio>
+  
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('submit') }}">Upload</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- DOM Element References ---
+      const playerContainer = document.getElementById('player-container');
+      const player = document.getElementById('player');
+      const playerThumb = document.getElementById('player-thumb');
+      const playerTitle = document.getElementById('player-title');
+      const playPauseBtn = document.getElementById('custom-play-pause');
+      const playIcon = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon');
+      const progressBar = document.getElementById('progress-bar');
+      const progressFilled = document.getElementById('progress-filled');
+      const currentTimeEl = document.getElementById('current-time');
+      const totalTimeEl = document.getElementById('total-time');
+      const allEpisodes = document.querySelectorAll('.episode');
+      
+      const formatTime = s => isNaN(s) ? '0:00' : `${Math.floor(s/60)}:${(Math.floor(s%60)+'').padStart(2,'0')}`;
+
+      // ========= REWRITTEN: Simplified and Correct Player Logic =========
+      allEpisodes.forEach(el => {
+        // Lazy load duration on hover for better perceived performance
+        el.addEventListener('mouseenter', () => {
+            if (el.dataset.durationLoaded) return;
+            const durationSpan = el.querySelector('.episode-duration');
+            durationSpan.textContent = '🕒 Loading...';
+            const tempAudio = new Audio(el.dataset.audioUrl);
+            tempAudio.addEventListener('loadedmetadata', () => {
+              durationSpan.textContent = `🕒 ${formatTime(tempAudio.duration)}`;
+              el.dataset.durationLoaded = 'true';
+            });
+        }, { once: true });
+
+        // Main click handler
+        el.addEventListener('click', () => {
+          const audioUrl = el.dataset.audioUrl;
+          const isSameEpisode = player.src === audioUrl;
+
+          if (isSameEpisode) {
+            // If it's the same episode, just toggle play/pause
+            if (player.paused) {
+              player.play();
+            } else {
+              player.pause();
+            }
+          } else {
+            // If it's a new episode, switch to it
+            allEpisodes.forEach(ep => ep.classList.remove('active')); // Deactivate all
+            el.classList.add('active'); // Activate the new one
+
+            player.src = audioUrl;
+            playerThumb.src = el.dataset.imageUrl;
+            playerTitle.textContent = el.querySelector('.episode-info h3').textContent;
+            
+            player.play();
+            playerContainer.classList.add('visible');
+          }
+        });
+      });
+
+      // --- Sync Custom UI with Audio Player State ---
+      player.addEventListener('play', () => {
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+      });
+
+      player.addEventListener('pause', () => {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      });
+
+      player.addEventListener('ended', () => {
+        const currentActive = document.querySelector('.episode.active');
+        if (currentActive) currentActive.classList.remove('active');
+      });
+      
+      player.addEventListener('loadedmetadata', () => {
+        totalTimeEl.textContent = formatTime(player.duration);
+      });
+
+      player.addEventListener('timeupdate', () => {
+        if(player.duration) { progressFilled.style.width = `${(player.currentTime / player.duration) * 100}%`; }
+        currentTimeEl.textContent = formatTime(player.currentTime);
+      });
+
+      // --- Custom Controls Handlers ---
+      playPauseBtn.addEventListener('click', () => {
+        if (!player.src) return;
+        player.paused ? player.play() : player.pause();
+      });
+
+      progressBar.addEventListener('click', (e) => {
+        if (!player.duration) return;
+        player.currentTime = (e.offsetX / progressBar.clientWidth) * player.duration;
+      });
+
+      // --- Other Page Logic ---
+      document.querySelector('.menu-toggle').addEventListener('click', () => {
+        document.querySelector('.nav-links').classList.toggle('show');
+      });
+      const descWrapper = document.querySelector('.description-wrapper'), descBtn = document.getElementById('toggle-desc-btn');
+      if(descWrapper && descBtn && descWrapper.scrollHeight > descWrapper.offsetHeight) {
+        descBtn.style.display = 'block';
+        descBtn.addEventListener('click', () => {
+          descBtn.textContent = descWrapper.classList.toggle('expanded') ? 'Show Less' : 'Read More';
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
+ -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ story.story_name }} – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <style>
+    :root {
+      --player-height-desktop: 80px;
+      --player-height-mobile: 65px;
+      --brand-color: #28a745;
+      --brand-color-hover: #218838;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    /* Sticky Footer CSS */
+    html, body { height: 100%; }
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        background: #f5f7fa; color: #333; line-height: 1.6; 
+        padding-bottom: var(--player-height-desktop);
+        display: flex; flex-direction: column; min-height: 100vh;
+    }
+
+    a { text-decoration: none; }
+    
+    .navbar { background: var(--brand-color); position: sticky; top: 0; z-index: 200; }
+    .navbar .container { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; height: 60px; padding: 0 1rem; }
+    .navbar .logo a { font-size: 1.5rem; font-weight: bold; color: #fff; }
+    .navbar .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: #fff; cursor: pointer; }
+    .navbar .nav-links { list-style: none; display: flex; }
+    .navbar .nav-links li a { color: white; display: block; padding: .75rem 1rem; transition: background .2s; }
+    .navbar .nav-links li a:hover { background: rgba(255,255,255,0.2); }
+    
+    /* === UPDATED: Content Area Styling === */
+    .content {
+        flex-grow: 1; /* Pushes footer down */
+        width: 100%; /* Takes full width of its container */
+        max-width: 850px; /* Sets a max readable width */
+        margin-left: auto; /* Horizontally centers the content */
+        margin-right: auto; /* Horizontally centers the content */
+        padding: 2rem 1.5rem; /* Adds vertical and horizontal spacing inside */
+    }
+
+    .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+    .card img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: contain; background: #f0f2f5; }
+    .card-content { padding: 1.5rem; }
+    .card-content h1 { font-size: 2rem; color: var(--brand-color); margin-bottom: .5rem; }
+    .card-content .author { font-style: italic; color: #666; margin-bottom: 1rem; }
+    .description-wrapper { max-height: 4.8em; overflow: hidden; position: relative; transition: max-height 0.4s ease-in-out; }
+    .description-wrapper.expanded { max-height: 1000px; }
+    .description-wrapper:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2em; background: linear-gradient(to top, white, rgba(255, 255, 255, 0)); pointer-events: none; }
+    .toggle-button { background: none; border: none; color: var(--brand-color); font-weight: bold; cursor: pointer; padding: 0.5rem 0; margin-top: 0.5rem; display: none; }
+    
+    .episode-list { display: grid; gap: 1rem; }
+    .episode { display: flex; align-items: center; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform .2s, box-shadow .2s, border-color .2s; border: 2px solid transparent; }
+    .episode:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .episode.active { border-color: var(--brand-color); background: #e9f7ec; }
+    .episode-thumb { width: 80px; height: 80px; object-fit: cover; flex-shrink: 0; }
+    .episode-info { padding: .75rem 1.25rem; flex: 1; min-width: 0; }
+    .episode-info h3 { margin: 0 0 .25rem; font-size: 1.1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .episode-duration { font-size: 0.9rem; color: #777; font-weight: 500; }
+    
+    .player-container { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--player-height-desktop); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+    .player-container.visible { transform: translateY(0); }
+    .player-art-info { display: flex; align-items: center; width: 300px; min-width: 0; }
+    #player-thumb { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 15px; flex-shrink: 0; }
+    #player-title { font-weight: bold; font-size: 0.9rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-controls { display: flex; flex-grow: 1; align-items: center; gap: 15px; }
+    #custom-play-pause { background: var(--brand-color); border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; flex-shrink: 0; transition: background-color .2s; }
+    #custom-play-pause:hover { background: var(--brand-color-hover); }
+    #custom-play-pause svg { width: 22px; height: 22px; }
+    .progress-box { display: flex; align-items: center; gap: 10px; width: 100%; }
+    #current-time, #total-time { font-size: 0.8rem; color: #666; font-variant-numeric: tabular-nums; }
+    #progress-bar { flex-grow: 1; background-color: #e0e0e0; height: 5px; border-radius: 5px; cursor: pointer; }
+    #progress-filled { background-color: var(--brand-color); width: 0; height: 100%; border-radius: 5px; }
+    
+    footer { background: var(--brand-color); color: #fff; padding: 2rem 1rem; text-align: center; flex-shrink: 0; }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    footer a { color: #fff; text-decoration: none; transition: text-decoration .2s; }
+    footer a:hover { text-decoration: underline; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1.5rem; }
+
+    @media (max-width: 768px) {
+        body { padding-bottom: var(--player-height-mobile); }
+        .navbar .menu-toggle { display: block; }
+        .navbar .nav-links { display: none; flex-direction: column; width: 100%; position: absolute; top: 60px; left: 0; background: var(--brand-color); }
+        .navbar .nav-links.show { display: flex; }
+        .content { padding: 1.5rem 1rem; } /* Less padding on mobile */
+        .player-container { height: var(--player-height-mobile); padding: 0 10px; }
+        .player-art-info { width: auto; flex-grow: 1; }
+        #player-thumb { width: 45px; height: 45px; margin-right: 10px; }
+        .player-controls { flex-grow: 0; gap: 10px; }
+        .progress-box { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('submit') }}">Upload</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="content">
+    <div class="card">
+      <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+      <div class="card-content">
+        <h1>{{ story.story_name }}</h1>
+        <p class="author">by {{ story.author_name }}</p>
+        {% if story.description %}
+          <div class="description-wrapper"><p class="story-description">{{ story.description }}</p></div>
+          <button id="toggle-desc-btn" class="toggle-button">Read More</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2 style="text-align:center; margin-bottom:1.5rem; color:var(--brand-color);">Episodes</h2>
+    <div class="episode-list">
+      {% for ep in episodes %}
+      <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}" data-image-url="{{ url_for('uploaded_file', filename=ep.image_file) }}">
+        <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+        <div class="episode-info">
+          <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
+          <span class="episode-duration">🕒 --:--</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </main>
+  
+  <div id="player-container" class="player-container">
+    <div class="player-art-info">
+        <img id="player-thumb" src="data:," alt="">
+        <div id="player-title">Select an episode to begin</div>
+    </div>
+    <div class="player-controls">
+        <button id="custom-play-pause" aria-label="Play/Pause">
+            <svg id="play-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>
+            <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z"/></svg>
+        </button>
+        <div class="progress-box">
+            <span id="current-time">0:00</span>
+            <div id="progress-bar"><div id="progress-filled"></div></div>
+            <span id="total-time">0:00</span>
+        </div>
+    </div>
+  </div>
+  
+  <audio id="player" style="display:none;"></audio>
+  
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('submit') }}">Upload</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- All JavaScript logic is unchanged and correct ---
+      const playerContainer = document.getElementById('player-container'), player = document.getElementById('player'), playerThumb = document.getElementById('player-thumb');
+      const playerTitle = document.getElementById('player-title'), playPauseBtn = document.getElementById('custom-play-pause'), playIcon = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon'), progressBar = document.getElementById('progress-bar'), progressFilled = document.getElementById('progress-filled');
+      const currentTimeEl = document.getElementById('current-time'), totalTimeEl = document.getElementById('total-time'), allEpisodes = document.querySelectorAll('.episode');
+      let currentEpisodeElement = null;
+      const formatTime = s => isNaN(s) ? '0:00' : `${Math.floor(s/60)}:${(Math.floor(s%60)+'').padStart(2,'0')}`;
+      allEpisodes.forEach(el => {
+        el.addEventListener('click', () => {
+          const isCurrentlyPlaying = player.src === el.dataset.audioUrl && !player.paused;
+          if (!el.dataset.durationLoaded) {
+            const durationSpan = el.querySelector('.episode-duration');
+            durationSpan.textContent = '🕒 Loading...';
+            const tempAudio = new Audio(el.dataset.audioUrl);
+            tempAudio.addEventListener('loadedmetadata', () => {
+              durationSpan.textContent = `🕒 ${formatTime(tempAudio.duration)}`;
+              el.dataset.durationLoaded = 'true';
+            });
+          }
+          if (isCurrentlyPlaying) { player.pause(); } 
+          else {
+            if (player.src !== el.dataset.audioUrl) {
+              player.src = el.dataset.audioUrl;
+              playerThumb.src = el.dataset.imageUrl;
+              playerTitle.textContent = el.querySelector('.episode-info h3').textContent;
+              currentEpisodeElement = el;
+            }
+            player.play();
+            playerContainer.classList.add('visible');
+          }
+        });
+      });
+      player.addEventListener('play', () => { playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; allEpisodes.forEach(e => e.classList.toggle('active', e === currentEpisodeElement)); });
+      player.addEventListener('pause', () => { playIcon.style.display = 'block'; pauseIcon.style.display = 'none'; allEpisodes.forEach(e => e.classList.remove('active')); });
+      player.addEventListener('ended', () => { if(currentEpisodeElement) currentEpisodeElement.classList.remove('active'); });
+      player.addEventListener('loadedmetadata', () => { totalTimeEl.textContent = formatTime(player.duration); });
+      player.addEventListener('timeupdate', () => {
+        if(player.duration) { progressFilled.style.width = `${(player.currentTime / player.duration) * 100}%`; }
+        currentTimeEl.textContent = formatTime(player.currentTime);
+      });
+      playPauseBtn.addEventListener('click', () => { if (!player.src) return; player.paused ? player.play() : player.pause(); });
+      progressBar.addEventListener('click', (e) => { if (!player.duration) return; player.currentTime = (e.offsetX / progressBar.clientWidth) * player.duration; });
+      document.querySelector('.menu-toggle').addEventListener('click', () => { document.querySelector('.nav-links').classList.toggle('show'); });
+      const descWrapper = document.querySelector('.description-wrapper'), descBtn = document.getElementById('toggle-desc-btn');
+      if(descWrapper && descBtn && descWrapper.scrollHeight > descWrapper.offsetHeight) {
+        descBtn.style.display = 'block';
+        descBtn.addEventListener('click', () => { descBtn.textContent = descWrapper.classList.toggle('expanded') ? 'Show Less' : 'Read More'; });
+      }
+    });
+  </script>
+
+</body>
+</html>
+ -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ story.story_name }} – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='NexaLearn.ico') }}" type="image/x-icon">
+  <style>
+    :root {
+      --player-height-desktop: 80px;
+      --player-height-mobile: 65px;
+      --brand-color: #28a745;
+      --brand-color-hover: #218838;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    /* ========== NEW: Sticky Footer CSS ========== */
+    html, body {
+        height: 100%; /* Ensure html and body can take full height */
+    }
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        background: #f5f7fa; 
+        color: #333; 
+        line-height: 1.6; 
+        padding-bottom: var(--player-height-desktop); /* Reserve space for the audio player */
+        
+        /* Flexbox properties to make footer sticky */
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    .content {
+        /* This tells the main content area to grow and fill available space, pushing the footer down */
+        flex-grow: 1;
+    }
+    /* =========================================== */
+
+    a { text-decoration: none; }
+    
+    .navbar { background: var(--brand-color); position: sticky; top: 0; z-index: 200; }
+    .navbar .container { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; height: 60px; padding: 0 1rem; }
+    .navbar .logo a { font-size: 1.5rem; font-weight: bold; color: #fff; }
+    .navbar .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: #fff; cursor: pointer; }
+    .navbar .nav-links { list-style: none; display: flex; }
+    .navbar .nav-links li a { color: white; display: block; padding: .75rem 1rem; transition: background .2s; }
+    .navbar .nav-links li a:hover { background: rgba(255,255,255,0.2); }
+    
+    .card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2rem; margin-top: 2rem; }
+    .card img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: contain; background: #f0f2f5; }
+    .card-content { padding: 1.5rem; }
+    .card-content h1 { font-size: 2rem; color: var(--brand-color); margin-bottom: .5rem; }
+    .card-content .author { font-style: italic; color: #666; margin-bottom: 1rem; }
+    .description-wrapper { max-height: 4.8em; overflow: hidden; position: relative; transition: max-height 0.4s ease-in-out; }
+    .description-wrapper.expanded { max-height: 1000px; }
+    .description-wrapper:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2em; background: linear-gradient(to top, white, rgba(255, 255, 255, 0)); pointer-events: none; }
+    .toggle-button { background: none; border: none; color: var(--brand-color); font-weight: bold; cursor: pointer; padding: 0.5rem 0; margin-top: 0.5rem; display: none; }
+    
+    .episode-list { display: grid; gap: 1rem; }
+    .episode { display: flex; align-items: center; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: transform .2s, box-shadow .2s, border-color .2s; border: 2px solid transparent; }
+    .episode:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .episode.active { border-color: var(--brand-color); background: #e9f7ec; }
+    .episode-thumb { width: 80px; height: 80px; object-fit: cover; flex-shrink: 0; }
+    .episode-info { padding: .75rem 1.25rem; flex: 1; min-width: 0; }
+    .episode-info h3 { margin: 0 0 .25rem; font-size: 1.1rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .episode-duration { font-size: 0.9rem; color: #777; font-weight: 500; }
+    
+    .player-container { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--player-height-desktop); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+    .player-container.visible { transform: translateY(0); }
+    .player-art-info { display: flex; align-items: center; width: 300px; min-width: 0; }
+    #player-thumb { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 15px; flex-shrink: 0; }
+    #player-title { font-weight: bold; font-size: 0.9rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-controls { display: flex; flex-grow: 1; align-items: center; gap: 15px; }
+    #custom-play-pause { background: var(--brand-color); border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; flex-shrink: 0; transition: background-color .2s; }
+    #custom-play-pause:hover { background: var(--brand-color-hover); }
+    #custom-play-pause svg { width: 22px; height: 22px; }
+    .progress-box { display: flex; align-items: center; gap: 10px; width: 100%; }
+    #current-time, #total-time { font-size: 0.8rem; color: #666; font-variant-numeric: tabular-nums; }
+    #progress-bar { flex-grow: 1; background-color: #e0e0e0; height: 5px; border-radius: 5px; cursor: pointer; }
+    #progress-filled { background-color: var(--brand-color); width: 0; height: 100%; border-radius: 5px; }
+    
+    footer {
+      background: var(--brand-color);
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 0; /* Changed from 4rem to 0 as requested for sticky behavior */
+      flex-shrink: 0; /* Prevents the footer from shrinking */
+    }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    footer a { color: #fff; text-decoration: none; transition: text-decoration .2s; }
+    footer a:hover { text-decoration: underline; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1.5rem; }
+
+    @media (max-width: 768px) {
+        body { padding-bottom: var(--player-height-mobile); }
+        .navbar .menu-toggle { display: block; }
+        .navbar .nav-links { display: none; flex-direction: column; width: 100%; position: absolute; top: 60px; left: 0; background: var(--brand-color); }
+        .navbar .nav-links.show { display: flex; }
+        .player-container { height: var(--player-height-mobile); padding: 0 10px; }
+        .player-art-info { width: auto; flex-grow: 1; }
+        #player-thumb { width: 45px; height: 45px; margin-right: 10px; }
+        .player-controls { flex-grow: 0; gap: 10px; }
+        .progress-box { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('submit') }}">Upload</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="card">
+      <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+      <div class="card-content">
+        <h1>{{ story.story_name }}</h1>
+        <p class="author">by {{ story.author_name }}</p>
+        {% if story.description %}
+          <div class="description-wrapper"><p class="story-description">{{ story.description }}</p></div>
+          <button id="toggle-desc-btn" class="toggle-button">Read More</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2 style="text-align:center; margin-bottom:1.5rem; color:var(--brand-color);">Episodes</h2>
+    <div class="episode-list">
+      {% for ep in episodes %}
+      <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}" data-image-url="{{ url_for('uploaded_file', filename=ep.image_file) }}">
+        <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+        <div class="episode-info">
+          <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
+          <span class="episode-duration">🕒 --:--</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <div id="player-container" class="player-container">
+    <div class="player-art-info">
+        <img id="player-thumb" src="data:," alt="">
+        <div id="player-title">Select an episode to begin</div>
+    </div>
+    <div class="player-controls">
+        <button id="custom-play-pause" aria-label="Play/Pause">
+            <svg id="play-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>
+            <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z"/></svg>
+        </button>
+        <div class="progress-box">
+            <span id="current-time">0:00</span>
+            <div id="progress-bar"><div id="progress-filled"></div></div>
+            <span id="total-time">0:00</span>
+        </div>
+    </div>
+  </div>
+  
+  <audio id="player" style="display:none;"></audio>
+  
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('submit') }}">Upload</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- All JavaScript logic is unchanged and correct ---
+      const playerContainer = document.getElementById('player-container'), player = document.getElementById('player'), playerThumb = document.getElementById('player-thumb');
+      const playerTitle = document.getElementById('player-title'), playPauseBtn = document.getElementById('custom-play-pause'), playIcon = document.getElementById('play-icon');
+      const pauseIcon = document.getElementById('pause-icon'), progressBar = document.getElementById('progress-bar'), progressFilled = document.getElementById('progress-filled');
+      const currentTimeEl = document.getElementById('current-time'), totalTimeEl = document.getElementById('total-time'), allEpisodes = document.querySelectorAll('.episode');
+      let currentEpisodeElement = null;
+      const formatTime = s => isNaN(s) ? '0:00' : `${Math.floor(s/60)}:${(Math.floor(s%60)+'').padStart(2,'0')}`;
+      allEpisodes.forEach(el => {
+        el.addEventListener('click', () => {
+          const isCurrentlyPlaying = player.src === el.dataset.audioUrl && !player.paused;
+          if (!el.dataset.durationLoaded) {
+            const durationSpan = el.querySelector('.episode-duration');
+            durationSpan.textContent = '🕒 Loading...';
+            const tempAudio = new Audio(el.dataset.audioUrl);
+            tempAudio.addEventListener('loadedmetadata', () => {
+              durationSpan.textContent = `🕒 ${formatTime(tempAudio.duration)}`;
+              el.dataset.durationLoaded = 'true';
+            });
+          }
+          if (isCurrentlyPlaying) { player.pause(); } 
+          else {
+            if (player.src !== el.dataset.audioUrl) {
+              player.src = el.dataset.audioUrl;
+              playerThumb.src = el.dataset.imageUrl;
+              playerTitle.textContent = el.querySelector('.episode-info h3').textContent;
+              currentEpisodeElement = el;
+            }
+            player.play();
+            playerContainer.classList.add('visible');
+          }
+        });
+      });
+      player.addEventListener('play', () => { playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; allEpisodes.forEach(e => e.classList.toggle('active', e === currentEpisodeElement)); });
+      player.addEventListener('pause', () => { playIcon.style.display = 'block'; pauseIcon.style.display = 'none'; allEpisodes.forEach(e => e.classList.remove('active')); });
+      player.addEventListener('ended', () => { if(currentEpisodeElement) currentEpisodeElement.classList.remove('active'); });
+      player.addEventListener('loadedmetadata', () => { totalTimeEl.textContent = formatTime(player.duration); });
+      player.addEventListener('timeupdate', () => {
+        if(player.duration) { progressFilled.style.width = `${(player.currentTime / player.duration) * 100}%`; }
+        currentTimeEl.textContent = formatTime(player.currentTime);
+      });
+      playPauseBtn.addEventListener('click', () => { if (!player.src) return; player.paused ? player.play() : player.pause(); });
+      progressBar.addEventListener('click', (e) => { if (!player.duration) return; player.currentTime = (e.offsetX / progressBar.clientWidth) * player.duration; });
+      document.querySelector('.menu-toggle').addEventListener('click', () => { document.querySelector('.nav-links').classList.toggle('show'); });
+      const descWrapper = document.querySelector('.description-wrapper'), descBtn = document.getElementById('toggle-desc-btn');
+      if(descWrapper && descBtn && descWrapper.scrollHeight > descWrapper.offsetHeight) {
+        descBtn.style.display = 'block';
+        descBtn.addEventListener('click', () => { descBtn.textContent = descWrapper.classList.toggle('expanded') ? 'Show Less' : 'Read More'; });
+      }
+    });
+  </script>
+
+</body>
+</html>
+ -->
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ story.story_name }} – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { text-decoration: none; }
+    
+    /* Navbar Styles (Unchanged) */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      padding: 0 1rem;
+    }
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 1rem;
+    }
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 0;
+    }
+    .navbar .nav-links li a {
+      color: white;
+      display: block;
+      padding: .75rem 1rem;
+      border-radius: 0;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    @media (max-width: 768px) {
+      .navbar .menu-toggle { display: block; }
+      .navbar .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        margin-top: .5rem;
+      }
+      .navbar .nav-links.show { display: flex; }
+      .navbar .nav-links li a { margin: 0 .5rem; }
+    }
+
+    .content { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+    }
+    .card img { width: 100%; object-fit: contain; aspect-ratio: 1/1; background: #f5f7fa; }
+    .card-content { padding: 1.5rem; }
+    .card-content h1 { font-size: 2rem; color: #28a745; margin-bottom: .5rem; }
+    .card-content .author { font-style: italic; color: #666; margin-bottom: 1rem; }
+
+    /* ========== NEW: Collapsible Description Styles ========== */
+    .description-wrapper {
+      max-height: 4.8em; /* Limits text to about 3 lines */
+      overflow: hidden;
+      position: relative;
+      transition: max-height 0.4s ease-in-out;
+    }
+    .description-wrapper.expanded {
+      max-height: 1000px; /* A large value to allow full expansion */
+    }
+    /* Creates a fade-out effect at the bottom when collapsed */
+    .description-wrapper:not(.expanded)::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2em;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+      pointer-events: none;
+    }
+    .toggle-button {
+      background: none;
+      border: none;
+      color: #28a745;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0.5rem 0;
+      margin-top: 0.5rem;
+      display: none; /* Hidden by default, enabled by JS if needed */
+    }
+    /* ======================================================== */
+
+    .episode-list { display: grid; gap: 1rem; }
+    .episode {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform .1s, background-color 0.2s;
+      position: relative;
+      padding-left: 2.5rem;
+    }
+    .episode:hover { transform: translateY(-2px); }
+    .episode.active {
+      background: #e9f7ec;
+    }
+    .episode.active::before {
+      content: "🔊";
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.5rem;
+    }
+    .episode-thumb {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      background: #fafafa;
+      flex-shrink: 0;
+    }
+    .episode-info {
+      padding: .75rem 1rem;
+      flex: 1;
+    }
+    .episode-info h3 {
+      margin: 0 0 .5rem;
+      font-size: 1.1rem;
+      color: #28a745;
+    }
+
+    footer {
+      background: #28a745;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    footer a { color: #fff; }
+    footer small { color: #e0e0e0; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" style="color: white;">NexaLearn</a>
+      </div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="card">
+      <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+      <div class="card-content">
+        <h1>{{ story.story_name }}</h1>
+        <p class="author">by {{ story.author_name }}</p>
+
+
+        {% if story.description %}
+          <div class="description-wrapper">
+            <p class="story-description">{{ story.description }}</p>
+          </div>
+          <button id="toggle-desc-btn" class="toggle-button">Read More</button>
+        {% endif %}
+     
+      </div>
+    </div>
+
+    <h2 style="text-align:center; margin-bottom:1rem; color:#28a745;">Episodes</h2>
+    <div class="episode-list">
+      {% for ep in episodes %}
+        <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}">
+          <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+          <div class="episode-info">
+            <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <audio id="player" controls style="width: 100%; margin-top: 2rem;"></audio>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">privacy policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">terms and conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    // --- Mobile Menu Toggle (Unchanged) ---
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('show');
+    });
+
+    // --- Audio Player Logic (Unchanged) ---
+    const player = document.getElementById('player');
+    let currentEpisode = null;
+
+    document.querySelectorAll('.episode').forEach(el => {
+      el.addEventListener('click', () => {
+        const src = el.getAttribute('data-audio-url');
+        const wasThisEpisodeActive = el.classList.contains('active');
+        
+        // Remove active class from all episodes first
+        document.querySelectorAll('.episode.active').forEach(act => act.classList.remove('active'));
+
+        if (wasThisEpisodeActive && !player.paused) {
+          // If the clicked episode was playing, pause it
+          player.pause();
+        } else {
+          // If a different episode was clicked OR the same was clicked but paused
+          if (player.src !== src) {
+            player.src = src;
+          }
+          player.play();
+          el.classList.add('active');
+          currentEpisode = el;
+        }
+      });
+    });
+
+    player.addEventListener('play', () => {
+        // Ensure the correct episode has the active class when playback starts
+        document.querySelectorAll('.episode').forEach(el => {
+            if (el.getAttribute('data-audio-url') === player.src) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    });
+
+    player.addEventListener('pause', () => {
+        if (currentEpisode) currentEpisode.classList.remove('active');
+    });
+
+    player.addEventListener('ended', () => {
+      if (currentEpisode) currentEpisode.classList.remove('active');
+      currentEpisode = null;
+    });
+
+    // ========== NEW: Collapsible Description Logic ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      const wrapper = document.querySelector('.description-wrapper');
+      const button = document.getElementById('toggle-desc-btn');
+
+      // Check if the description elements exist on the page
+      if (wrapper && button) {
+        // Check if the content is taller than its collapsed height
+        // offsetHeight is the visible height, scrollHeight is the total height
+        if (wrapper.scrollHeight > wrapper.offsetHeight) {
+          button.style.display = 'block'; // Only show the button if text is overflowing
+        }
+
+        button.addEventListener('click', () => {
+          // Toggle the 'expanded' class on the wrapper
+          const isExpanded = wrapper.classList.toggle('expanded');
+          
+          // Change the button text accordingly
+          button.textContent = isExpanded ? 'Show Less' : 'Read More';
+        });
+      }
+    });
+    // ========================================================
+  </script>
+
+</body>
+</html>
+ -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ story.story_name }} – NexaLearn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { text-decoration: none; }
+    /* Navbar */
+      /* Navbar */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      padding: 0 1rem;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 1rem;
+    }
+
+    /* Links + search wrapper */
+    .navbar .nav-and-search {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 0;
+    }
+    .navbar .nav-links li a {
+      color: white;
+      display: block;
+      padding: .75rem 1rem;
+      border-radius: 0;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+ 
+
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block;
+      }
+      .navbar .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        margin-top: .5rem;
+      }
+      .navbar .nav-links.show {
+        display: flex;
+      }
+      .navbar .nav-links li a {
+        margin: 0 .5rem;
+      }
+    }
+
+    .content { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+    }
+    .card img { width: 100%; object-fit: contain; aspect-ratio: 1/1; background: #f5f7fa; }
+    .card-content { padding: 1rem; }
+    .card-content h1 { font-size: 2rem; color: #28a745; margin-bottom: .5rem; }
+    .card-content .author { font-style: italic; color: #666; margin-bottom: 1rem; }
+
+    .episode-list { display: grid; gap: 1rem; }
+    .episode {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform .1s;
+      position: relative;
+      padding-left: 2.5rem;
+    }
+    .episode:hover { transform: translateY(-2px); }
+    .episode.active {
+      filter: grayscale(80%);
+      background: #e0e0e0;
+    }
+    .episode.active::before {
+      content: "🔊";
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.5rem;
+    }
+    .episode-thumb {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      background: #fafafa;
+      flex-shrink: 0;
+    }
+    .episode-info {
+      padding: .75rem 1rem;
+      flex: 1;
+    }
+    .episode-info h3 {
+      margin: 0 0 .5rem;
+      font-size: 1.1rem;
+      color: #28a745;
+    }
+
+    footer {
+      background: #28a745;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .footer-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    footer a { color: #fff; }
+    footer small { color: #e0e0e0; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="{{ url_for('index') }}" style="color: white;">NexaLearn</a>
+      </div>
+      <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="card" style="margin:auto;">
+      <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+      <div class="card-content">
+        <h1>{{ story.story_name }}</h1>
+        <p class="author">by {{ story.author_name }}</p>
+        {% if story.description %}<p>{{ story.description }}</p>{% endif %}
+      </div>
+    </div>
+
+    <h2 style="text-align:center; margin-bottom:1rem; color:#28a745;">Episodes</h2>
+    <div class="episode-list">
+      {% for ep in episodes %}
+        <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}">
+          <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+          <div class="episode-info">
+            <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <audio id="player"></audio>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">privacy policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">terms and conditions</a>
+    </div>
+    <small>&copy; 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <script>
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.toggle('show');
+    });
+
+    const player = document.getElementById('player');
+    let currentEpisode = null;
+    let currentSrc = '';
+
+    document.querySelectorAll('.episode').forEach(el => {
+      el.addEventListener('click', () => {
+        const src = el.getAttribute('data-audio-url');
+
+        if (currentSrc === src) {
+          if (player.paused) {
+            player.play();
+            el.classList.add('active');
+          } else {
+            player.pause();
+            el.classList.remove('active');
+          }
+        } else {
+          document.querySelectorAll('.episode.active').forEach(act => act.classList.remove('active'));
+          player.src = src;
+          player.play();
+          el.classList.add('active');
+          currentSrc = src;
+          currentEpisode = el;
+        }
+      });
+    });
+
+    player.addEventListener('ended', () => {
+      if (currentEpisode) currentEpisode.classList.remove('active');
+      currentSrc = '';
+    });
+  </script>
+
+</body>
+</html>
+ -->

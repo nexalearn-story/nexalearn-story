@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us – NexaLearn</title>
+  <link rel="icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/static/NexaLearn.ico" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+    a { text-decoration: none; }
+
+    /* === UPDATED NAVBAR STYLES === */
+    .navbar {
+      background: #28a745;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      color: #fff;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 60px;
+    }
+
+    .navbar .logo a {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+    }
+    .navbar .logo a:hover {
+      text-decoration: none;
+    }
+
+    .navbar .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* This is the container for our links */
+    .navbar .nav-menu {
+      display: flex;
+    }
+
+    .navbar .nav-links {
+      list-style: none;
+      display: flex;
+    }
+    .navbar .nav-links li a {
+      color: #fff;
+      display: block;
+      padding: .75rem 1rem;
+      transition: background .2s;
+    }
+    .navbar .nav-links li a:hover {
+      background: rgba(255,255,255,0.2);
+      text-decoration: none;
+    }
+
+    /* === MOBILE NAVBAR STYLES (THE FIX) === */
+    @media (max-width: 768px) {
+      .navbar .menu-toggle {
+        display: block; /* Show the hamburger */
+      }
+
+      /* Hide the menu container by default */
+      .navbar .nav-menu {
+        display: none;
+        
+        /* Position it as an absolute dropdown */
+        position: absolute;
+        top: 60px; /* Navbar height */
+        left: 0;
+        width: 100%;
+        
+        /* Style the dropdown */
+        background-color: #28a745;
+        flex-direction: column;
+        padding: 0.5rem 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+
+      /* When .show is added, display the menu */
+      .navbar .nav-menu.show {
+        display: flex;
+      }
+
+      /* Style the links for vertical layout */
+      .navbar .nav-links {
+        flex-direction: column;
+        width: 100%;
+      }
+      .navbar .nav-links li a {
+        padding: .75rem 1.5rem;
+        width: 100%;
+      }
+    }
+
+    /* Main content container */
+    .main-container {
+      max-width: 800px;
+      margin: 3rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    h1 { text-align: center; margin-bottom: 2rem; color: #28a745; }
+
+    /* Contact form */
+    form { display: grid; gap: 1.25rem; }
+    .field { display: flex; flex-direction: column; }
+    label { font-weight: 500; margin-bottom: .5rem; }
+    input[type="text"], input[type="email"], textarea {
+      padding: .75rem; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #28a745;
+      box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+    }
+    textarea { resize: vertical; min-height: 120px; }
+
+    button[type="submit"] {
+      padding: .85rem; font-size: 1.1rem; background: #28a745; color: #fff;
+      border: none; border-radius: 5px; cursor: pointer; transition: background .2s;
+      font-weight: bold;
+    }
+    button[type="submit"]:hover { background: #218838; }
+
+    .contact-box {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e0e0e0;
+    }
+    .contact-box p a {
+      color: #0056b3;
+      font-weight: 500;
+    }
+    .contact-box p a:hover {
+        text-decoration: underline;
+    }
+
+
+    /* Footer */
+    footer {
+      background: #28a745;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    footer a { color: #fff; }
+    footer a:hover { text-decoration: underline; }
+    footer small { color: #e0e0e0; display: block; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <!-- === UPDATED NAVBAR HTML STRUCTURE === -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="{{ url_for('index') }}">NexaLearn</a>
+      </div>
+
+      <!-- Hamburger toggle button -->
+      <button class="menu-toggle" aria-label="Toggle navigation">☰</button>
+
+      <!-- Wrapper div for the navigation links -->
+      <div class="nav-menu">
+        <ul class="nav-links">
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('submit') }}">Upload</a></li>
+          <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contact Form -->
+  <main class="main-container">
+    <h1>Contact Us</h1>
+    <form action="{{ url_for('contact') }}" method="post">
+      <div class="field">
+        <label for="name">Your Name *</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="field">
+        <label for="email">Your Email *</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="field">
+        <label for="message">Message *</label>
+        <textarea id="message" name="message" required></textarea>
+      </div>
+      <button type="submit">Send Message</button>
+    </form>
+    <div class="contact-box">
+      <p>If you have any questions, feel free to <br>
+        email us directly at:
+        <a href="mailto:nexalearn1@gmail.com">nexalearn1@gmail.com</a>
+      </p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+      <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+      <a href="{{ url_for('termsAndCondition') }}">Terms and Conditions</a>
+    </div>
+    <small>© 2025 NexaLearn. All rights reserved.</small>
+  </footer>
+
+  <!-- === UPDATED JAVASCRIPT === -->
+  <script>
+    // Toggle mobile nav by targeting the new wrapper
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.nav-menu').classList.toggle('show');
+    });
+  </script>
+
+</body>
+</html>
