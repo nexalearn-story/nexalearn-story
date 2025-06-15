@@ -15,16 +15,17 @@ app = Flask(__name__)
 app.secret_key = 'replace-with-a-secure-key'
 
 
-UPLOAD_MASTER_PASSWORD = '123456789'
+UPLOAD_MASTER_PASSWORD = 'sohail123ansari'
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 ALLOWED_AUDIO_EXT = {'mp3', 'wav', 'ogg'}
 ALLOWED_IMAGE_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 DB_CONFIG = {
-    'host':     '127.0.0.1',
-    'user':     'root',
-    'password': 'rehan@786',
-    'database': 'audiobook_newdb',
+    'host':     'nexalearndatabase-rehanalam786369123456789-b893.b.aivencloud.com',
+    'user':     'avnadmin',
+    'port':     15611,
+    'password': 'AVNS_LSJ1eP25ovnOkdIEKdg',
+    'database': 'defaultdb',
     'use_pure': True
 }
 CATEGORIES = [
@@ -209,4 +210,4 @@ def server_error(e): return render_template('error.html', message="Internal serv
 
 if __name__ == '__main__':
     # app.run()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run()
