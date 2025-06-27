@@ -7,19 +7,18 @@ import traceback
 from collections import defaultdict
 from flask import (
     Flask, render_template, request, redirect,
-    flash, url_for, send_from_directory, abort
+    flash, url_for, abort
 )
 from werkzeug.utils import secure_filename
 import mysql.connector
 from mysql.connector import Error as MySQLError
-import boto3  # ## NEW: Import boto3
+import boto3
 
 app = Flask(__name__)
 app.secret_key = 'replace-with-a-secure-key'
 
 
 UPLOAD_MASTER_PASSWORD = 'sohail123ansari'
-
 
 ALLOWED_AUDIO_EXT = {'mp3', 'wav', 'ogg'}
 ALLOWED_IMAGE_EXT = {'png', 'jpg', 'jpeg', 'gif'}
@@ -33,15 +32,14 @@ DB_CONFIG = {
     'use_pure': True
 }
 
-
-
+# --- IMPORTANT: PUT YOUR NEW, VALID KEYS HERE ---
+# --- You must get these from your AWS IAM console after revoking the old ones.
 S3_CONFIG = {
     'bucket':        'bucketeer-8005e61f-ce33-4dea-8c28-da8a05bb60a9',
-    'region':        'eu-west-1', # e.g., 'us-east-1'
-    'access_key_id': 'AKIARVGPJVYVFBOJECOV',
-    'secret_key':    'Zk7KGZ5CQEGJNPOz14UjQPP03mh7NUa9+gpOIFAl'
+    'region':        'eu-west-1',
+    'access_key_id': 'AKIARVGPJVYVFBOJECOV',  # <-- PASTE YOUR NEW KEY ID HERE
+    'secret_key':    'Zk7KGZ5CQEGJNPOz14UjQPP03mh7NUa9+gpOIFAl'       # <-- PASTE YOUR NEW SECRET KEY HERE
 }
-# ## NEW: Public URL for your bucket files
 S3_LOCATION = f"https://{S3_CONFIG['bucket']}.s3.{S3_CONFIG['region']}.amazonaws.com/"
 
 
@@ -66,7 +64,6 @@ def get_db_connection():
         app.logger.error(f"DB connection error: {e}")
         raise
 
-# ## NEW: Helper function to get an S3 client
 def get_s3_client():
     try:
         s3 = boto3.client(
@@ -80,11 +77,9 @@ def get_s3_client():
         app.logger.error(f"S3 client creation error: {e}")
         raise
 
-# ## NEW: Make S3_LOCATION available to all templates
 @app.context_processor
 def inject_s3_location():
     return dict(S3_LOCATION=S3_LOCATION)
-
 
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
@@ -112,17 +107,17 @@ def submit():
                 flash("Valid cover image is required.", 'error')
                 return redirect(request.url)
 
-            # ## NEW: Get S3 client instance
             s3 = get_s3_client()
 
-            # ## CHANGED: Upload cover file to S3 instead of saving locally
             ext = cover.filename.rsplit('.', 1)[1].lower()
             cover_fn = secure_filename(f"{story}_cover.{ext}")
+            
+            # This will now upload the file as PRIVATE, as you requested.
             s3.upload_fileobj(
                 cover,
                 S3_CONFIG['bucket'],
                 cover_fn,
-                ExtraArgs={'ContentType': cover.content_type} # Set content type for proper browser display
+                ExtraArgs={'ContentType': cover.content_type}
             )
 
             conn = get_db_connection()
@@ -134,7 +129,6 @@ def submit():
             """, (story, author, desc, cover_fn, category))
             story_id = cursor.lastrowid
 
-            # Process each episode
             for i in range(1, ep_count + 1):
                 audio = request.files.get(f"audioFiles{i}")
                 img   = request.files.get(f"imageFiles{i}")
@@ -149,7 +143,7 @@ def submit():
                 aud_fn = secure_filename(f"{story}_ep{i}_audio.{aud_ext}")
                 img_fn = secure_filename(f"{story}_ep{i}_image.{img_ext}")
 
-                # ## CHANGED: Upload audio and image files to S3
+                # These will also be uploaded as PRIVATE.
                 s3.upload_fileobj(
                     audio,
                     S3_CONFIG['bucket'],
@@ -182,7 +176,6 @@ def submit():
             return redirect(request.url)
         except Exception as ex:
             app.logger.error("Unhandled exception:\n" + traceback.format_exc())
-            # ## NEW: More specific error for S3 issues
             if 'boto' in str(ex).lower():
                 flash("An error occurred while uploading files to storage. Please check configuration.", 'error')
             else:
@@ -202,6 +195,7 @@ def index():
         stories_by_category = defaultdict(list)
         for story in all_stories:
             stories_by_category[story['category']].append(story)
+        conn.close()
         return render_template('index.html', stories_by_category=stories_by_category, categories=CATEGORIES)
     except MySQLError as db_err:
         app.logger.error(f"MySQL error on index: {db_err}")
@@ -222,7 +216,6 @@ def story(story_id):
     conn.close()
     return render_template('story.html', story=story, episodes=episodes)
 
-# The rest of your routes remain unchanged as they don't handle file serving
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     if request.method == 'POST':
@@ -256,4 +249,3 @@ def server_error(e): return render_template('error.html', message="Internal serv
 
 if __name__ == '__main__':
     app.run()
-
