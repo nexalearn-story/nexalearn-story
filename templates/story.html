@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -94,7 +95,7 @@
       <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
       <button class="menu-toggle" aria-label="Toggle menu">☰</button>
       <ul class="nav-links">
-        <<li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('index') }}">Home</a></li>
         <li><a href="{{ url_for('submit') }}">Upload</a></li>
         <li><a href="{{ url_for('contact') }}">Contact</a></li>
       </ul>
@@ -104,7 +105,7 @@
   <main class="content">
     <div class="main-content-container">
       <div class="card">
-        <img src="{{ url_for('uploaded_file', filename=story.cover_image) }}" alt="Cover of {{ story.story_name }}">
+        <img src="{{ S3_LOCATION }}{{ story.cover_image }}" alt="Cover of {{ story.story_name }}">
         <div class="card-content">
           <h1>{{ story.story_name }}</h1>
           <p class="author">by {{ story.author_name }}</p>
@@ -118,8 +119,8 @@
       <h2 style="text-align:center; margin-bottom:1.5rem; color:var(--brand-color);">Episodes</h2>
       <div class="episode-list">
         {% for ep in episodes %}
-        <div class="episode" data-audio-url="{{ url_for('uploaded_file', filename=ep.audio_file) }}" data-image-url="{{ url_for('uploaded_file', filename=ep.image_file) }}">
-          <img class="episode-thumb" src="{{ url_for('uploaded_file', filename=ep.image_file) }}" alt="Episode {{ ep.episode_number }} artwork">
+        <div class="episode" data-audio-url="{{ S3_LOCATION }}{{ ep.audio_file }}" data-image-url="{{ S3_LOCATION }}{{ ep.image_file }}">
+          <img class="episode-thumb" src="{{ S3_LOCATION }}{{ ep.image_file }}" alt="Episode {{ ep.episode_number }} artwork">
           <div class="episode-info">
             <h3>Episode {{ ep.episode_number }}: {{ ep.title }}</h3>
             <span class="episode-duration">🕒 --:--</span>
@@ -176,13 +177,10 @@
       const totalTimeEl = document.getElementById('total-time');
       const allEpisodes = document.querySelectorAll('.episode');
       
-      // -- STATE VARIABLE TO TRACK CURRENTLY LOADED AUDIO --
-      // This is the key to solving the problem. We store the relative URL.
       let currentPlayingUrl = null;
       
       const formatTime = s => isNaN(s) ? '0:00' : `${Math.floor(s/60)}:${(Math.floor(s%60)+'').padStart(2,'0')}`;
 
-      // ========= REWRITTEN & CORRECTED PLAYER LOGIC =========
       allEpisodes.forEach(el => {
         el.addEventListener('mouseenter', () => {
             if (el.dataset.durationLoaded) return;
@@ -195,33 +193,23 @@
             });
         }, { once: true });
 
-        // Main click handler for each episode
         el.addEventListener('click', () => {
           const clickedAudioUrl = el.dataset.audioUrl;
           
-          // **THE KEY FIX IS HERE**
-          // We now compare the clicked URL with our state variable.
           if (currentPlayingUrl === clickedAudioUrl) {
-            // --- REQUIREMENT 2 & 3: PAUSE/RESUME ---
-            // If it's the SAME episode, just toggle play/pause.
             if (player.paused) {
-              player.play(); // If paused, resume playing.
+              player.play();
             } else {
-              player.pause(); // If playing, pause it.
+              player.pause();
             }
           } else {
-            // --- REQUIREMENT 1: PLAY NEW EPISODE ---
-            // If it's a NEW episode, load it and play from the start.
-            
             allEpisodes.forEach(ep => ep.classList.remove('active')); 
             el.classList.add('active'); 
 
-            // Update the audio player's source and UI
             player.src = clickedAudioUrl;
             playerThumb.src = el.dataset.imageUrl;
             playerTitle.textContent = el.querySelector('.episode-info h3').textContent;
             
-            // **UPDATE OUR STATE VARIABLE**
             currentPlayingUrl = clickedAudioUrl;
             
             player.play();
@@ -230,11 +218,9 @@
         });
       });
 
-      // --- Sync Custom UI with Audio Player State ---
       player.addEventListener('play', () => {
         playIcon.style.display = 'none';
         pauseIcon.style.display = 'block';
-        // Ensure the correct episode is visually active
         document.querySelector('.episode.active')?.classList.remove('active');
         document.querySelector(`.episode[data-audio-url="${currentPlayingUrl}"]`)?.classList.add('active');
       });
@@ -247,7 +233,7 @@
       player.addEventListener('ended', () => {
         const currentActive = document.querySelector('.episode.active');
         if (currentActive) currentActive.classList.remove('active');
-        currentPlayingUrl = null; // Reset the state
+        currentPlayingUrl = null;
       });
       
       player.addEventListener('loadedmetadata', () => {
@@ -259,9 +245,8 @@
         currentTimeEl.textContent = formatTime(player.currentTime);
       });
 
-      // --- Custom Controls Handlers ---
       playPauseBtn.addEventListener('click', () => {
-        if (!currentPlayingUrl) return; // Do nothing if no audio is loaded
+        if (!currentPlayingUrl) return;
         player.paused ? player.play() : player.pause();
       });
 
@@ -272,7 +257,6 @@
         player.currentTime = (clickPosition / progressBar.clientWidth) * player.duration;
       });
 
-      // --- Other Page Logic ---
       document.querySelector('.menu-toggle').addEventListener('click', () => {
         document.querySelector('.nav-links').classList.toggle('show');
       });
@@ -288,4 +272,3 @@
 
 </body>
 </html>
-

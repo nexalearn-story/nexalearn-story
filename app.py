@@ -1,3 +1,5 @@
+# app.py
+
 import os
 import csv
 from os.path import exists
@@ -10,6 +12,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 import mysql.connector
 from mysql.connector import Error as MySQLError
+import boto3  # ## NEW: Import boto3
 
 app = Flask(__name__)
 app.secret_key = 'replace-with-a-secure-key'
@@ -17,9 +20,10 @@ app.secret_key = 'replace-with-a-secure-key'
 
 UPLOAD_MASTER_PASSWORD = 'sohail123ansari'
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+
 ALLOWED_AUDIO_EXT = {'mp3', 'wav', 'ogg'}
 ALLOWED_IMAGE_EXT = {'png', 'jpg', 'jpeg', 'gif'}
+
 DB_CONFIG = {
     'host':     'nexalearndatabase-rehanalam786369123456789-b893.b.aivencloud.com',
     'user':     'avnadmin',
@@ -28,16 +32,24 @@ DB_CONFIG = {
     'database': 'defaultdb',
     'use_pure': True
 }
+
+
+
+S3_CONFIG = {
+    'bucket':        'bucketeer-8005e61f-ce33-4dea-8c28-da8a05bb60a9',
+    'region':        'eu-west-1', # e.g., 'us-east-1'
+    'access_key_id': 'AKIARVGPJVYVFBOJECOV',
+    'secret_key':    'Zk7KGZ5CQEGJNPOz14UjQPP03mh7NUa9+gpOIFAl'
+}
+# ## NEW: Public URL for your bucket files
+S3_LOCATION = f"https://{S3_CONFIG['bucket']}.s3.{S3_CONFIG['region']}.amazonaws.com/"
+
+
 CATEGORIES = [
     'Story', 'School Lessons', 'University Courses', 'Novels', 'Biographies',
     'Science & Technology', 'History', 'Self-Help & Motivation',
     'Business & Finance', 'Children\'s Stories', 'Poetry', 'Other'
 ]
-
-
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def allowed_file(filename, allowed_set):
     return (
@@ -54,22 +66,35 @@ def get_db_connection():
         app.logger.error(f"DB connection error: {e}")
         raise
 
-@app.route('/uploads/<path:filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+# ## NEW: Helper function to get an S3 client
+def get_s3_client():
+    try:
+        s3 = boto3.client(
+           "s3",
+           region_name=S3_CONFIG['region'],
+           aws_access_key_id=S3_CONFIG['access_key_id'],
+           aws_secret_access_key=S3_CONFIG['secret_key']
+        )
+        return s3
+    except Exception as e:
+        app.logger.error(f"S3 client creation error: {e}")
+        raise
+
+# ## NEW: Make S3_LOCATION available to all templates
+@app.context_processor
+def inject_s3_location():
+    return dict(S3_LOCATION=S3_LOCATION)
+
 
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
     if request.method == 'POST':
         try:
-  
             provided_password = request.form.get('uploadPassword')
             if provided_password != UPLOAD_MASTER_PASSWORD:
-           
                 flash("Invalid Upload Password. Access Denied.", 'error')
                 return redirect(request.url)
 
-          
             author   = request.form.get('authorName', '').strip()
             story    = request.form.get('storyName', '').strip()
             desc     = request.form.get('description', '').strip()
@@ -77,7 +102,7 @@ def submit():
             cover    = request.files.get('coverImage')
             category = request.form.get('category', 'Story').strip()
 
-            if not author or not story:
+            if not all([author, story]):
                 flash("Author name and Story name are required.", 'error')
                 return redirect(request.url)
             if not (1 <= ep_count <= 50):
@@ -87,12 +112,18 @@ def submit():
                 flash("Valid cover image is required.", 'error')
                 return redirect(request.url)
 
-            # Save cover file
+            # ## NEW: Get S3 client instance
+            s3 = get_s3_client()
+
+            # ## CHANGED: Upload cover file to S3 instead of saving locally
             ext = cover.filename.rsplit('.', 1)[1].lower()
             cover_fn = secure_filename(f"{story}_cover.{ext}")
-            cover_path = os.path.join(app.config['UPLOAD_FOLDER'], cover_fn)
-            cover.save(cover_path)
-
+            s3.upload_fileobj(
+                cover,
+                S3_CONFIG['bucket'],
+                cover_fn,
+                ExtraArgs={'ContentType': cover.content_type} # Set content type for proper browser display
+            )
 
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -103,7 +134,7 @@ def submit():
             """, (story, author, desc, cover_fn, category))
             story_id = cursor.lastrowid
 
-            # Process each episode (this part is unchanged)
+            # Process each episode
             for i in range(1, ep_count + 1):
                 audio = request.files.get(f"audioFiles{i}")
                 img   = request.files.get(f"imageFiles{i}")
@@ -117,8 +148,20 @@ def submit():
                 img_ext = img.filename.rsplit('.', 1)[1].lower()
                 aud_fn = secure_filename(f"{story}_ep{i}_audio.{aud_ext}")
                 img_fn = secure_filename(f"{story}_ep{i}_image.{img_ext}")
-                audio.save(os.path.join(app.config['UPLOAD_FOLDER'], aud_fn))
-                img.save(os.path.join(app.config['UPLOAD_FOLDER'], img_fn))
+
+                # ## CHANGED: Upload audio and image files to S3
+                s3.upload_fileobj(
+                    audio,
+                    S3_CONFIG['bucket'],
+                    aud_fn,
+                    ExtraArgs={'ContentType': audio.content_type}
+                )
+                s3.upload_fileobj(
+                    img,
+                    S3_CONFIG['bucket'],
+                    img_fn,
+                    ExtraArgs={'ContentType': img.content_type}
+                )
 
                 cursor.execute("""
                   INSERT INTO episodes
@@ -139,12 +182,14 @@ def submit():
             return redirect(request.url)
         except Exception as ex:
             app.logger.error("Unhandled exception:\n" + traceback.format_exc())
-            flash("An unexpected error occurred. Please contact support.", 'error')
+            # ## NEW: More specific error for S3 issues
+            if 'boto' in str(ex).lower():
+                flash("An error occurred while uploading files to storage. Please check configuration.", 'error')
+            else:
+                flash("An unexpected error occurred. Please contact support.", 'error')
             return redirect(request.url)
 
-    # GET request: just render the form
     return render_template('submit.html', categories=CATEGORIES)
-
 
 
 @app.route('/')
@@ -177,6 +222,7 @@ def story(story_id):
     conn.close()
     return render_template('story.html', story=story, episodes=episodes)
 
+# The rest of your routes remain unchanged as they don't handle file serving
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     if request.method == 'POST':
@@ -209,5 +255,5 @@ def not_found(e): return render_template('error.html', message="Page not found."
 def server_error(e): return render_template('error.html', message="Internal server error."), 500
 
 if __name__ == '__main__':
-    # app.run()
     app.run()
+
