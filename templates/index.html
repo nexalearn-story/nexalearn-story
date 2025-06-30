@@ -233,7 +233,7 @@
         <div class="story-row">
           {% for s in stories_by_category[category] %}
           <a class="card" href="{{ url_for('story', story_id=s.story_id) }}">
-            <img data-src="src="{{ story.cover_image_url }}" alt="Cover of {{ s.story_name }}" class="lazy-image">
+            <img data-src="{{ s.cover_image_url }}" alt="Cover of {{ s.story_name }}" class="lazy-image">
 <!--             <img data-src="{{ S3_LOCATION }}{{ s.cover_image }}" alt="Cover of {{ s.story_name }}" class="lazy-image"> -->
             
             <div class="card-content">
