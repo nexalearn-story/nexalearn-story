@@ -35,10 +35,10 @@ DB_CONFIG = {
 # --- IMPORTANT: PUT YOUR NEW, VALID KEYS HERE ---
 # --- You must get these from your AWS IAM console after revoking the old ones.
 S3_CONFIG = {
-    'bucket':        'bucketeer-8005e61f-ce33-4dea-8c28-da8a05bb60a9',
+    'bucket':        'bucketeer-f6b9dc5a-6fca-4e39-971c-ca53a1778251',
     'region':        'eu-west-1',
-    'access_key_id': 'AKIARVGPJVYVFBOJECOV',  # <-- PASTE YOUR NEW KEY ID HERE
-    'secret_key':    'Zk7KGZ5CQEGJNPOz14UjQPP03mh7NUa9+gpOIFAl'       # <-- PASTE YOUR NEW SECRET KEY HERE
+    'access_key_id': 'AKIARVGPJVYVLEZLSYXQ',  # <-- PASTE YOUR NEW KEY ID HERE
+    'secret_key':    'JGzMpB4mNhhdNXtK2cCsdLeBdIsb4w2+n71tqG1W'       # <-- PASTE YOUR NEW SECRET KEY HERE
 }
 S3_LOCATION = f"https://{S3_CONFIG['bucket']}.s3.{S3_CONFIG['region']}.amazonaws.com/"
 
