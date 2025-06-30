@@ -205,36 +205,75 @@ def submit():
 #         app.logger.error("Unhandled exception on index:\n" + traceback.format_exc())
 #         return render_template('error.html', message="An unexpected error occurred."), 500
 
+# @app.route('/')
+# def index():
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor(dictionary=True)
+#         # It's good practice to only select the columns you need
+#         cursor.execute("SELECT story_id, story_name, author_name, cover_image, category FROM stories ORDER BY story_id DESC")
+#         all_stories = cursor.fetchall()
+#         conn.close()
+
+#         # Get the S3 client to generate URLs
+#         s3 = get_s3_client()
+
+#         # For each story, generate a temporary URL for its cover image
+#         for story in all_stories:
+#             # Check if a cover image filename exists
+#             if story.get('cover_image'):
+#                 try:
+#                     # Generate a URL valid for 1 hour (3600 seconds)
+#                     url = s3.generate_presigned_url(
+#                         'get_object',
+#                         Params={'Bucket': S3_CONFIG['bucket'], 'Key': story['cover_image']},
+#                         ExpiresIn=3600
+#                     )
+#                     # Add this new temporary URL to the story dictionary
+#                     story['cover_image_url'] = url
+#                 except ClientError as e:
+#                     app.logger.error(f"Couldn't generate presigned URL for {story['cover_image']}: {e}")
+#                     # You could add a placeholder URL in case of an error
+#                     story['cover_image_url'] = ''
+
+#         stories_by_category = defaultdict(list)
+#         for story in all_stories:
+#             stories_by_category[story['category']].append(story)
+
+#         return render_template('index.html', stories_by_category=stories_by_category, categories=CATEGORIES)
+#     except Exception as ex:
+#         app.logger.error("Unhandled exception on index:\n" + traceback.format_exc())
+#         return render_template('error.html', message="An unexpected error occurred."), 500
+# In app.py, REPLACE your current index() function with this one:
+
 @app.route('/')
 def index():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        # It's good practice to only select the columns you need
         cursor.execute("SELECT story_id, story_name, author_name, cover_image, category FROM stories ORDER BY story_id DESC")
         all_stories = cursor.fetchall()
         conn.close()
 
-        # Get the S3 client to generate URLs
         s3 = get_s3_client()
 
-        # For each story, generate a temporary URL for its cover image
         for story in all_stories:
-            # Check if a cover image filename exists
+            # --- FIX ---
+            # 1. First, set a default empty URL for every story.
+            story['cover_image_url'] = ''
+            
+            # 2. If a cover image exists, try to create a real URL and overwrite the empty one.
             if story.get('cover_image'):
                 try:
-                    # Generate a URL valid for 1 hour (3600 seconds)
                     url = s3.generate_presigned_url(
                         'get_object',
                         Params={'Bucket': S3_CONFIG['bucket'], 'Key': story['cover_image']},
-                        ExpiresIn=3600
+                        ExpiresIn=3600  # URL is valid for 1 hour
                     )
-                    # Add this new temporary URL to the story dictionary
                     story['cover_image_url'] = url
                 except ClientError as e:
                     app.logger.error(f"Couldn't generate presigned URL for {story['cover_image']}: {e}")
-                    # You could add a placeholder URL in case of an error
-                    story['cover_image_url'] = ''
+                    # If an error occurs, the URL remains an empty string, preventing a crash.
 
         stories_by_category = defaultdict(list)
         for story in all_stories:
@@ -244,7 +283,6 @@ def index():
     except Exception as ex:
         app.logger.error("Unhandled exception on index:\n" + traceback.format_exc())
         return render_template('error.html', message="An unexpected error occurred."), 500
-
 
 
 @app.route('/story/<int:story_id>')
