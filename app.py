@@ -30,10 +30,10 @@ def get_bucketeer_env_var(var_name):
     # If no color prefix is found, fall back to the base name
     return os.environ.get(f"BUCKETEER_{var_name}")
 
-S3_BUCKET = get_bucketeer_env_var('BUCKET_NAME')
-S3_REGION = get_bucketeer_env_var('AWS_REGION')
-S3_ACCESS_KEY_ID = get_bucketeer_env_var('AWS_ACCESS_KEY_ID')
-S3_SECRET_KEY = get_bucketeer_env_var('AWS_SECRET_KEY')
+S3_BUCKET = get_bucketeer_env_var('BUCKETEER_BUCKET_NAME')
+S3_REGION = get_bucketeer_env_var('BUCKETEER_AWS_REGION')
+S3_ACCESS_KEY_ID = get_bucketeer_env_var('BUCKETEER_AWS_ACCESS_KEY_ID')
+S3_SECRET_KEY = get_bucketeer_env_var('BUCKETEER_AWS_SECRET_ACCESS_KEY')
 
 DB_CONFIG = {
     'host':     os.environ.get('DB_HOST'),
