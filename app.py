@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 import mysql.connector
 from mysql.connector import Error as MySQLError
 import boto3
+from botocore.exceptions import ClientError
 
 app = Flask(__name__)
 app.secret_key = 'replace-with-a-secure-key'
@@ -185,36 +186,107 @@ def submit():
     return render_template('submit.html', categories=CATEGORIES)
 
 
+# @app.route('/')
+# def index():
+#     try:
+#         conn = get_db_connection()
+#         cursor = conn.cursor(dictionary=True)
+#         cursor.execute("SELECT story_id, story_name, author_name, cover_image, category FROM stories ORDER BY story_id DESC")
+#         all_stories = cursor.fetchall()
+#         stories_by_category = defaultdict(list)
+#         for story in all_stories:
+#             stories_by_category[story['category']].append(story)
+#         conn.close()
+#         return render_template('index.html', stories_by_category=stories_by_category, categories=CATEGORIES)
+#     except MySQLError as db_err:
+#         app.logger.error(f"MySQL error on index: {db_err}")
+#         return render_template('error.html', message="Could not load stories."), 500
+#     except Exception as ex:
+#         app.logger.error("Unhandled exception on index:\n" + traceback.format_exc())
+#         return render_template('error.html', message="An unexpected error occurred."), 500
+
 @app.route('/')
 def index():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
+        # It's good practice to only select the columns you need
         cursor.execute("SELECT story_id, story_name, author_name, cover_image, category FROM stories ORDER BY story_id DESC")
         all_stories = cursor.fetchall()
+        conn.close()
+
+        # Get the S3 client to generate URLs
+        s3 = get_s3_client()
+
+        # For each story, generate a temporary URL for its cover image
+        for story in all_stories:
+            # Check if a cover image filename exists
+            if story.get('cover_image'):
+                try:
+                    # Generate a URL valid for 1 hour (3600 seconds)
+                    url = s3.generate_presigned_url(
+                        'get_object',
+                        Params={'Bucket': S3_CONFIG['bucket'], 'Key': story['cover_image']},
+                        ExpiresIn=3600
+                    )
+                    # Add this new temporary URL to the story dictionary
+                    story['cover_image_url'] = url
+                except ClientError as e:
+                    app.logger.error(f"Couldn't generate presigned URL for {story['cover_image']}: {e}")
+                    # You could add a placeholder URL in case of an error
+                    story['cover_image_url'] = ''
+
         stories_by_category = defaultdict(list)
         for story in all_stories:
             stories_by_category[story['category']].append(story)
-        conn.close()
+
         return render_template('index.html', stories_by_category=stories_by_category, categories=CATEGORIES)
-    except MySQLError as db_err:
-        app.logger.error(f"MySQL error on index: {db_err}")
-        return render_template('error.html', message="Could not load stories."), 500
     except Exception as ex:
         app.logger.error("Unhandled exception on index:\n" + traceback.format_exc())
         return render_template('error.html', message="An unexpected error occurred."), 500
 
+
+
 @app.route('/story/<int:story_id>')
 def story(story_id):
     conn = get_db_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT story_id, story_name, author_name, description, cover_image, category FROM stories WHERE story_id = %s", (story_id,))
-    story = cur.fetchone()
-    if not story: abort(404)
-    cur.execute("SELECT episode_number, title, audio_file, image_file FROM episodes WHERE story_id = %s ORDER BY episode_number", (story_id,))
-    episodes = cur.fetchall()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT story_id, story_name, author_name, description, cover_image, category FROM stories WHERE story_id = %s", (story_id,))
+    story_data = cursor.fetchone()
+    if not story_data: abort(404)
+    
+    cursor.execute("SELECT episode_number, title, audio_file, image_file FROM episodes WHERE story_id = %s ORDER BY episode_number", (story_id,))
+    episodes = cursor.fetchall()
     conn.close()
-    return render_template('story.html', story=story, episodes=episodes)
+
+    s3 = get_s3_client()
+
+    # Generate presigned URL for the main story cover
+    if story_data.get('cover_image'):
+        story_data['cover_image_url'] = s3.generate_presigned_url('get_object', Params={'Bucket': S3_CONFIG['bucket'], 'Key': story_data['cover_image']}, ExpiresIn=3600)
+
+    # Generate presigned URLs for each episode's audio and image
+    for episode in episodes:
+        if episode.get('audio_file'):
+            episode['audio_url'] = s3.generate_presigned_url('get_object', Params={'Bucket': S3_CONFIG['bucket'], 'Key': episode['audio_file']}, ExpiresIn=3600)
+        if episode.get('image_file'):
+            episode['image_url'] = s3.generate_presigned_url('get_object', Params={'Bucket': S3_CONFIG['bucket'], 'Key': episode['image_file']}, ExpiresIn=3600)
+
+    return render_template('story.html', story=story_data, episodes=episodes)
+
+
+
+# @app.route('/story/<int:story_id>')
+# def story(story_id):
+#     conn = get_db_connection()
+#     cur = conn.cursor(dictionary=True)
+#     cur.execute("SELECT story_id, story_name, author_name, description, cover_image, category FROM stories WHERE story_id = %s", (story_id,))
+#     story = cur.fetchone()
+#     if not story: abort(404)
+#     cur.execute("SELECT episode_number, title, audio_file, image_file FROM episodes WHERE story_id = %s ORDER BY episode_number", (story_id,))
+#     episodes = cur.fetchall()
+#     conn.close()
+#     return render_template('story.html', story=story, episodes=episodes)
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
