@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -204,12 +205,12 @@
 </head>
 <body>
 
-  <!-- Navbar -->
+
   <nav class="navbar">
     <div class="container">
       <div class="logo"><a href="{{ url_for('index') }}">NexaLearn</a></div>
       <button class="menu-toggle" aria-label="Toggle menu">☰</button>
-      <!-- This is the container we will show/hide -->
+    
       <div class="nav-and-search">
         <ul class="nav-links">
           <li><a href="{{ url_for('index') }}">Home</a></li>
@@ -221,10 +222,9 @@
     </div>
   </nav>
 
-  <!-- Hero Section -->
+
   <section class="hero"><img src="/static/back.jpeg" alt="NexaLearn Hero"></section>
 
-  <!-- Main Content with Category Rows -->
   <main class="container">
     {% for category in categories %}
       {% if stories_by_category[category] %}
@@ -233,7 +233,9 @@
         <div class="story-row">
           {% for s in stories_by_category[category] %}
           <a class="card" href="{{ url_for('story', story_id=s.story_id) }}">
+            <!-- <img data-src="{{ s.cover_image_url }}" alt="Cover of {{ s.story_name }}" class="lazy-image"> -->
             <img data-src="{{ S3_LOCATION }}{{ s.cover_image }}" alt="Cover of {{ s.story_name }}" class="lazy-image">
+            
             <div class="card-content">
               <h3>{{ s.story_name }}</h3>
               <p class="author">by {{ s.author_name }}</p>
@@ -246,7 +248,7 @@
     {% endfor %}
   </main>
 
-  <!-- Footer -->
+
   <footer>
     <div class="footer-links">
   <a href="{{ url_for('index') }}">Home</a>
@@ -313,3 +315,4 @@
 
 </body>
 </html>
+ 
